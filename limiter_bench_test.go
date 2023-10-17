@@ -52,6 +52,6 @@ func BenchmarkAllow(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		rIdx = i % numResources
-		l.Allow(resources[rIdx], action)
+		l.Allow(resources[rIdx], action, "127.0.0.1")
 	}
 }

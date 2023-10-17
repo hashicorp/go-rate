@@ -176,6 +176,7 @@ func TestNewLimiter(t *testing.T) {
 type allowTestRequest struct {
 	resource string
 	action   string
+	ip       string
 
 	expectAllowed bool
 	expectErr     error
@@ -202,6 +203,14 @@ func TestLimiterAllow(t *testing.T) {
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
 			},
 			[]Option{},
 			[]allowTestRequest{
@@ -214,9 +223,9 @@ func TestLimiterAllow(t *testing.T) {
 						limit: &Limit{
 							Resource:    "resource",
 							Action:      "action",
-							Per:         LimitPerTotal,
+							Per:         LimitPerIPAddress,
 							Unlimited:   false,
-							MaxRequests: 100,
+							MaxRequests: 50,
 							Period:      time.Minute,
 						},
 						used: 1,
@@ -234,6 +243,14 @@ func TestLimiterAllow(t *testing.T) {
 					Per:         LimitPerTotal,
 					Unlimited:   false,
 					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 50,
 					Period:      time.Minute,
 				},
 			},
@@ -258,6 +275,14 @@ func TestLimiterAllow(t *testing.T) {
 					Per:         LimitPerTotal,
 					Unlimited:   false,
 					MaxRequests: 2,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 50,
 					Period:      time.Minute,
 				},
 			},
@@ -319,7 +344,7 @@ func TestLimiterAllow(t *testing.T) {
 		},
 		{
 			"ReachedCapacity",
-			2,
+			4,
 			[]*Limit{
 				{
 					Resource:    "resource1",
@@ -334,13 +359,37 @@ func TestLimiterAllow(t *testing.T) {
 					Action:      "action2",
 					Per:         LimitPerTotal,
 					Unlimited:   false,
-					MaxRequests: 1,
+					MaxRequests: 100,
 					Period:      time.Minute,
 				},
 				{
 					Resource:    "resource3",
 					Action:      "action3",
 					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource1",
+					Action:      "action1",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource2",
+					Action:      "action2",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 1,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource3",
+					Action:      "action3",
+					Per:         LimitPerIPAddress,
 					Unlimited:   false,
 					MaxRequests: 2,
 					Period:      time.Minute,
@@ -357,9 +406,9 @@ func TestLimiterAllow(t *testing.T) {
 						limit: &Limit{
 							Resource:    "resource1",
 							Action:      "action1",
-							Per:         LimitPerTotal,
+							Per:         LimitPerIPAddress,
 							Unlimited:   false,
-							MaxRequests: 100,
+							MaxRequests: 50,
 							Period:      time.Minute,
 						},
 						used: 1,
@@ -374,7 +423,7 @@ func TestLimiterAllow(t *testing.T) {
 						limit: &Limit{
 							Resource:    "resource2",
 							Action:      "action2",
-							Per:         LimitPerTotal,
+							Per:         LimitPerIPAddress,
 							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
@@ -402,9 +451,9 @@ func TestLimiterAllow(t *testing.T) {
 						limit: &Limit{
 							Resource:    "resource1",
 							Action:      "action1",
-							Per:         LimitPerTotal,
+							Per:         LimitPerIPAddress,
 							Unlimited:   false,
-							MaxRequests: 100,
+							MaxRequests: 50,
 							Period:      time.Minute,
 						},
 						used: 2,
@@ -419,7 +468,7 @@ func TestLimiterAllow(t *testing.T) {
 						limit: &Limit{
 							Resource:    "resource2",
 							Action:      "action2",
-							Per:         LimitPerTotal,
+							Per:         LimitPerIPAddress,
 							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
@@ -438,7 +487,7 @@ func TestLimiterAllow(t *testing.T) {
 			require.NotNil(t, l)
 
 			for _, r := range tc.reqs {
-				allowed, q, err := l.Allow(r.resource, r.action)
+				allowed, q, err := l.Allow(r.resource, r.action, r.ip)
 				if r.expectErr != nil {
 					require.EqualError(t, err, r.expectErr.Error())
 					assert.Equal(t, r.expectAllowed, allowed)
