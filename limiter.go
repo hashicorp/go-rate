@@ -93,19 +93,21 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 //     RetryIn duration. Callers should use this time as an estimation of when
 //     the limiter should no longer be full.
 //   - There is no corresponding limit for the resource and action.
-func (l *Limiter) Allow(resource, action, ip string) (allowed bool, quota *Quota, err error) {
+func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, quota *Quota, err error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
 	allowOrder := []LimitPer{
 		LimitPerTotal,
 		LimitPerIPAddress,
+		LimitPerAuthToken,
 	}
 
 	quotas := make(map[LimitPer]*Quota, len(allowOrder))
 	keys := map[LimitPer]string{
 		LimitPerTotal:     string(LimitPerTotal),
 		LimitPerIPAddress: ip,
+		LimitPerAuthToken: authToken,
 	}
 
 	var ok bool
@@ -137,7 +139,8 @@ func (l *Limiter) Allow(resource, action, ip string) (allowed bool, quota *Quota
 		quotas[per] = q
 	}
 
-	for _, q := range quotas {
+	for _, per := range allowOrder {
+		q, _ := quotas[per]
 		q.Consume()
 		if quota == nil || q.Remaining() < quota.Remaining() {
 			quota = q

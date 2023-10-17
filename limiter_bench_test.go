@@ -12,23 +12,42 @@ import (
 func BenchmarkAllow(b *testing.B) {
 	numResources := 128
 	resources := make([]string, 128)
-	limits := make([]*Limit, numResources)
+	limits := make([]*Limit, 0, 3*numResources)
 	action := "action"
 
 	for i := 0; i < numResources; i++ {
 		res := fmt.Sprintf("res_%d", i)
 		resources[i] = res
-		limits[i] = &Limit{
-			Resource:    res,
-			Action:      action,
-			Per:         LimitPerTotal,
-			Unlimited:   false,
-			MaxRequests: 100,
-			Period:      time.Minute,
-		}
+		limits = append(
+			limits,
+			&Limit{
+				Resource:    res,
+				Action:      action,
+				Per:         LimitPerTotal,
+				Unlimited:   false,
+				MaxRequests: 100,
+				Period:      time.Minute,
+			},
+			&Limit{
+				Resource:    res,
+				Action:      action,
+				Per:         LimitPerIPAddress,
+				Unlimited:   false,
+				MaxRequests: 100,
+				Period:      time.Minute,
+			},
+			&Limit{
+				Resource:    res,
+				Action:      action,
+				Per:         LimitPerAuthToken,
+				Unlimited:   false,
+				MaxRequests: 100,
+				Period:      time.Minute,
+			},
+		)
 	}
 
-	l, err := NewLimiter(limits, numResources)
+	l, err := NewLimiter(limits, numResources*3)
 	if err != nil {
 		b.Fatalf("unexpected error: %q", err)
 	}
@@ -52,6 +71,9 @@ func BenchmarkAllow(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		rIdx = i % numResources
-		l.Allow(resources[rIdx], action, "127.0.0.1")
+		_, _, err := l.Allow(resources[rIdx], action, "127.0.0.1", "token")
+		if err != nil {
+			b.Fatalf(err.Error())
+		}
 	}
 }
