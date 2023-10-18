@@ -1,0 +1,102 @@
+
+name: benchstat
+
+on:
+  - pull_request
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  benchstat:
+    strategy:
+      matrix:
+        go: ["1.21"]
+        platform: [ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
+      - name: Checkout out code
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+        with:
+          fetch-depth: '0'
+      - name: Determine go cache key
+        id: go-cache-key
+        run: |
+          echo "key=${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum', './Makefile') }}" >> "$GITHUB_OUTPUT"
+          echo "restore-key=${{ runner.os }}-go-${{ matrix.go }}" >> "$GITHUB_OUTPUT"
+      - name: Determine Go cache paths
+        id: go-cache-paths
+        run: |
+          echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+          echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+          echo "go-bin=$(go env GOPATH)/bin" >> "$GITHUB_OUTPUT"
+      - name: Cache
+        uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
+        with:
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+            ${{ steps.go-cache-paths.outputs.go-bin }}
+            ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ steps.go-cache-key.outputs.key }}
+          restore-keys: |
+            ${{ steps.go-cache-key.outputs.restore-key }}
+      - name: Install tools
+        run: |
+          go mod download
+          make tools
+      - name: Bench New
+        run: |
+          # Run benchmarks without running any tests
+          go test -bench=. -count=10 -run=^# | tee new.txt
+      - name: Bench Old
+        run: |
+          git checkout "${GITHUB_BASE_REF}"
+          go mod download
+          # Run benchmarks without running any tests
+          go test -bench=. -count=10 -run=^# | tee old.txt
+          git checkout "${GITHUB_HEAD_REF}"
+      - name: Benchstat
+        run: |
+          benchstat old.txt new.txt | tee benchstat.txt
+      - name: Post benchstat
+        run: |
+          gh_comment_prefix='Benchstat'
+          gh_user_login='github-actions[bot]'
+          echo 'Hiding previous PR comments'
+          ./.github/scripts/hide-comments.sh \
+            "$GITHUB_API_URL" \
+            "$GITHUB_GRAPHQL_URL" \
+            "${{ secrets.GITHUB_TOKEN }}" \
+            "$GITHUB_REPOSITORY" \
+            "${{ github.event.pull_request.number }}" \
+            "$gh_comment_prefix" \
+            "$gh_user_login"
+
+          echo 'Generate github comment'
+          cat << EOF > github-comment.txt
+          ${gh_comment_prefix} - old: \`${GITHUB_BASE_REF}\` new: \`${GITHUB_HEAD_REF}\` @ ${{ github.event.pull_request.head.sha }}
+
+          \`\`\`
+          $(cat benchstat.txt)
+          \`\`\`
+          EOF
+
+          # Parse it through jq to build a valid json object.
+          jq --null-input \
+            --arg comment "$(cat github-comment.txt)" \
+            '{"body": $comment}' > body.json
+
+          # Post comment on PR.
+          echo "Posting new comment under PR #${{ github.event.pull_request.number }}"
+          curl -sX POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d @body.json \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/issues/${{ github.event.pull_request.number }}/comments"

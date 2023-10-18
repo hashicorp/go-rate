@@ -5,6 +5,7 @@ all: test
 tools:
 	go install github.com/hashicorp/copywrite@v0.15.0
 	go install mvdan.cc/gofumpt@v0.3.1
+	go install golang.org/x/perf/cmd/benchstat@latest
 
 .PHONY: test
 test:
