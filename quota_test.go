@@ -29,6 +29,7 @@ func TestQuota_reset(t *testing.T) {
 	q.reset(l)
 	assert.Equal(t, l, q.limit)
 	assert.Equal(t, uint64(0), q.used)
+	assert.Equal(t, uint64(10), q.MaxRequests())
 	q.used = 5
 
 	l2 := &Limit{
@@ -42,6 +43,7 @@ func TestQuota_reset(t *testing.T) {
 	q.reset(l2)
 	assert.Equal(t, l2, q.limit)
 	assert.Equal(t, uint64(0), q.used)
+	assert.Equal(t, uint64(50), q.MaxRequests())
 }
 
 func TestQuotaConsume(t *testing.T) {

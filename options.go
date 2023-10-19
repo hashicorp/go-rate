@@ -9,6 +9,9 @@ const (
 
 	// DefaultPolicyHeader is the default HTTP header for reporting the rate limit policy.
 	DefaultPolicyHeader = "RateLimit-Policy"
+
+	// DefaultUsageHeader is the default HTTP header for reporting quota usage.
+	DefaultUsageHeader = "RateLimit"
 )
 
 // Option provides a way to pass optional arguments.
@@ -25,12 +28,14 @@ func getOpts(opt ...Option) options {
 type options struct {
 	withNumberBuckets int
 	withPolicyHeader  string
+	withUsageHeader   string
 }
 
 func getDefaultOptions() options {
 	return options{
 		withNumberBuckets: DefaultNumberBuckets,
 		withPolicyHeader:  DefaultPolicyHeader,
+		withUsageHeader:   DefaultUsageHeader,
 	}
 }
 
@@ -46,5 +51,13 @@ func WithNumberBuckets(n int) Option {
 func WithPolicyHeader(h string) Option {
 	return func(o *options) {
 		o.withPolicyHeader = h
+	}
+}
+
+// WithUsageHeader is used to set the header key used by the Limiter for
+// reporting quota usage.
+func WithUsageHeader(h string) Option {
+	return func(o *options) {
+		o.withUsageHeader = h
 	}
 }

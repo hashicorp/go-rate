@@ -47,6 +47,15 @@ func (q *Quota) Remaining() uint64 {
 	return q.limit.MaxRequests - used
 }
 
+// MaxRequests returns the maximum number of requests that can be made for
+// this Quota.
+func (q *Quota) MaxRequests() uint64 {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	return q.limit.MaxRequests
+}
+
 // ResetsIn returns the amount of time before the quota will expire.
 func (q *Quota) ResetsIn() time.Duration {
 	q.mu.RLock()

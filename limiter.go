@@ -24,6 +24,7 @@ type quotaFetcher interface {
 type Limiter struct {
 	policies     map[string]*limitPolicy
 	policyHeader string
+	usageHeader  string
 
 	mu sync.RWMutex
 
@@ -48,6 +49,8 @@ type Limiter struct {
 //     in which the delete routine runs and must acquire a lock.
 //   - WithPolicyHeader: Sets the HTTP Header key to use when setting the policy
 //     header via SetPolicyHeader. This defaults to "RateLimit-Policy".
+//   - WithUsageHeader: Sets the HTTP Header key to use when setting the usage
+//     header via SetUsageHeader. This defaults to "RateLimit".
 func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 	const op = "rate.NewLimiter"
 
@@ -101,6 +104,7 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 	l := &Limiter{
 		policies:     policies,
 		policyHeader: opts.withPolicyHeader,
+		usageHeader:  opts.withUsageHeader,
 		quotaFetcher: s,
 	}
 
@@ -122,6 +126,19 @@ func (l *Limiter) SetPolicyHeader(resource, action string, header http.Header) e
 
 	header.Set(l.policyHeader, pol.String())
 	return nil
+}
+
+// SetUsageHeader sets the rate limit usage HTTP header using the provided
+// Quota.
+func (l *Limiter) SetUsageHeader(quota *Quota, header http.Header) {
+	if quota == nil {
+		return
+	}
+
+	header.Set(
+		l.usageHeader,
+		fmt.Sprintf("limit=%d, remaining=%d, reset=%d", quota.MaxRequests(), quota.Remaining(), int64(quota.ResetsIn().Seconds())),
+	)
 }
 
 // Allow checks if a request for the given resource and action should be allowed.

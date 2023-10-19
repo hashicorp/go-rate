@@ -1157,3 +1157,103 @@ func TestSetPolicyHeader(t *testing.T) {
 		})
 	}
 }
+
+func TestSetUsageHeader(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name              string
+		options           []Option
+		quota             *Quota
+		expectErr         error
+		expectHeader      string
+		expectHeaderValue string
+	}{
+		{
+			"ValidPolicy",
+			[]Option{},
+			&Quota{
+				limit: &Limit{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				used:      10,
+				expiresAt: time.Now().Add(time.Minute),
+			},
+			nil,
+			DefaultUsageHeader,
+			`limit=50, remaining=40, reset=59`,
+		},
+		{
+			"ValidPolicyAlternateHeader",
+			[]Option{WithUsageHeader("Usage-Header")},
+			&Quota{
+				limit: &Limit{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				used:      10,
+				expiresAt: time.Now().Add(time.Minute),
+			},
+			nil,
+			"Usage-Header",
+			`limit=50, remaining=40, reset=59`,
+		},
+		{
+			"NilQuota",
+			[]Option{},
+			nil,
+			nil,
+			DefaultUsageHeader,
+			``,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l, err := NewLimiter(
+				[]*Limit{
+					{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         LimitPerTotal,
+						Unlimited:   false,
+						MaxRequests: 100,
+						Period:      time.Minute,
+					},
+					{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         LimitPerIPAddress,
+						Unlimited:   false,
+						MaxRequests: 100,
+						Period:      time.Minute,
+					},
+					{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         LimitPerAuthToken,
+						Unlimited:   false,
+						MaxRequests: 100,
+						Period:      time.Minute,
+					},
+				},
+				10,
+				tc.options...)
+			require.NoError(t, err)
+			require.NotNil(t, l)
+
+			h := make(http.Header)
+			l.SetUsageHeader(tc.quota, h)
+			got := h.Get(tc.expectHeader)
+			assert.Equal(t, tc.expectHeaderValue, got)
+		})
+	}
+}
