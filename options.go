@@ -3,8 +3,13 @@
 
 package rate
 
-// DefaultNumberBuckets is the default number of buckets created for the quota store.
-const DefaultNumberBuckets = 4096
+const (
+	// DefaultNumberBuckets is the default number of buckets created for the quota store.
+	DefaultNumberBuckets = 4096
+
+	// DefaultPolicyHeader is the default HTTP header for reporting the rate limit policy.
+	DefaultPolicyHeader = "RateLimit-Policy"
+)
 
 // Option provides a way to pass optional arguments.
 type Option func(*options)
@@ -19,11 +24,13 @@ func getOpts(opt ...Option) options {
 
 type options struct {
 	withNumberBuckets int
+	withPolicyHeader  string
 }
 
 func getDefaultOptions() options {
 	return options{
 		withNumberBuckets: DefaultNumberBuckets,
+		withPolicyHeader:  DefaultPolicyHeader,
 	}
 }
 
@@ -31,5 +38,13 @@ func getDefaultOptions() options {
 func WithNumberBuckets(n int) Option {
 	return func(o *options) {
 		o.withNumberBuckets = n
+	}
+}
+
+// WithPolicyHeader is used to set the header key used by the Limiter for
+// reporting the limit policy.
+func WithPolicyHeader(h string) Option {
+	return func(o *options) {
+		o.withPolicyHeader = h
 	}
 }

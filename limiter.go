@@ -5,6 +5,7 @@ package rate
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -21,7 +22,8 @@ type quotaFetcher interface {
 // should be allowed.
 // TODO: expand this doc
 type Limiter struct {
-	limits map[string]*Limit
+	policies     map[string]*limitPolicy
+	policyHeader string
 
 	mu sync.RWMutex
 
@@ -44,6 +46,8 @@ type Limiter struct {
 //     quotas are deleted to free up space. However, it does also marginally
 //     increase the amount of memory needed, and can increase the frequency
 //     in which the delete routine runs and must acquire a lock.
+//   - WithPolicyHeader: Sets the HTTP Header key to use when setting the policy
+//     header via SetPolicyHeader. This defaults to "RateLimit-Policy".
 func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 	const op = "rate.NewLimiter"
 
@@ -52,20 +56,37 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 		return nil, fmt.Errorf("%s: %w", op, ErrEmptyLimits)
 	}
 
-	byKey := make(map[string]*Limit, len(limits))
+	opts := getOpts(o...)
 
+	policies := make(map[string]*limitPolicy, len(limits)/3)
+
+	var policy *limitPolicy
+	var ok bool
 	var maxEntryTTL time.Duration
 	for _, l := range limits {
+
 		if !l.IsValid() {
 			return nil, fmt.Errorf("%s: %w", op, ErrInvalidLimit)
 		}
-		key := getKey(l.Resource, l.Action, string(l.Per))
-		if _, ok := byKey[key]; ok {
-			return nil, fmt.Errorf("%s: %s %s %s: %w", op, l.Resource, l.Action, l.Per, ErrDuplicateLimit)
+		polKey := getKey(l.Resource, l.Action)
+
+		policy, ok = policies[polKey]
+		if !ok {
+			policy = newLimitPolicy(l.Resource, l.Action)
+			policies[polKey] = policy
 		}
-		byKey[key] = l
+		if err := policy.add(l); err != nil {
+			return nil, err
+		}
+
 		if l.Period > maxEntryTTL {
 			maxEntryTTL = l.Period
+		}
+	}
+
+	for _, p := range policies {
+		if err := p.validate(); err != nil {
+			return nil, err
 		}
 	}
 
@@ -78,11 +99,29 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 	}
 
 	l := &Limiter{
-		limits:       byKey,
+		policies:     policies,
+		policyHeader: opts.withPolicyHeader,
 		quotaFetcher: s,
 	}
 
 	return l, nil
+}
+
+// SetPolicyHeader sets the rate limit policy HTTP header for the provided
+// resource and action.
+func (l *Limiter) SetPolicyHeader(resource, action string, header http.Header) error {
+	polKey := getKey(resource, action)
+	pol, ok := l.policies[polKey]
+	if !ok {
+		return ErrLimitPolicyNotFound
+	}
+	p := pol.String()
+	if p == "" {
+		return nil
+	}
+
+	header.Set(l.policyHeader, pol.String())
+	return nil
 }
 
 // Allow checks if a request for the given resource and action should be allowed.
@@ -112,15 +151,22 @@ func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, q
 
 	var ok bool
 	var limit *Limit
+	var policy *limitPolicy
 	var q *Quota
 	var key string
 	allowed = true
 	for per, id := range keys {
-		key = getKey(resource, action, string(per))
-		limit, ok = l.limits[key]
+		key = getKey(resource, action)
+		policy, ok = l.policies[key]
 		if !ok {
 			allowed = false
-			err = ErrLimitNotFound
+			err = ErrLimitPolicyNotFound
+			return
+		}
+
+		limit, err = policy.limit(per)
+		if err != nil {
+			allowed = false
 			return
 		}
 

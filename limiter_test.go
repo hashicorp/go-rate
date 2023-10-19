@@ -4,6 +4,7 @@
 package rate
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -14,13 +15,198 @@ import (
 func TestNewLimiter(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name         string
-		maxSize      int
-		limits       []*Limit
-		options      []Option
-		expectErr    error
-		expectLimits map[string]*Limit
+		name           string
+		maxSize        int
+		limits         []*Limit
+		options        []Option
+		expectErr      error
+		expectPolicies map[string]*limitPolicy
 	}{
+		{
+			"ValidPolicy",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			nil,
+			map[string]*limitPolicy{
+				"resource:action": {
+					resource: "resource",
+					action:   "action",
+					m: map[LimitPer]*Limit{
+						LimitPerTotal: {
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerTotal,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+						LimitPerIPAddress: {
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerIPAddress,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+						LimitPerAuthToken: {
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerAuthToken,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+					},
+					policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
+				},
+			},
+		},
+		{
+			"MultiplePolicies",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource1",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource1",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource1",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			nil,
+			map[string]*limitPolicy{
+				"resource1:action": {
+					resource: "resource1",
+					action:   "action",
+					m: map[LimitPer]*Limit{
+						LimitPerTotal: {
+							Resource:    "resource1",
+							Action:      "action",
+							Per:         LimitPerTotal,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+						LimitPerIPAddress: {
+							Resource:    "resource1",
+							Action:      "action",
+							Per:         LimitPerIPAddress,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+						LimitPerAuthToken: {
+							Resource:    "resource1",
+							Action:      "action",
+							Per:         LimitPerAuthToken,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+					},
+					policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
+				},
+				"resource2:action": {
+					resource: "resource2",
+					action:   "action",
+					m: map[LimitPer]*Limit{
+						LimitPerTotal: {
+							Resource:    "resource2",
+							Action:      "action",
+							Per:         LimitPerTotal,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+						LimitPerIPAddress: {
+							Resource:    "resource2",
+							Action:      "action",
+							Per:         LimitPerIPAddress,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+						LimitPerAuthToken: {
+							Resource:    "resource2",
+							Action:      "action",
+							Per:         LimitPerAuthToken,
+							Unlimited:   false,
+							MaxRequests: 100,
+							Period:      time.Minute,
+						},
+					},
+					policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
+				},
+			},
+		},
 		{
 			"OneLimit",
 			10,
@@ -35,17 +221,8 @@ func TestNewLimiter(t *testing.T) {
 				},
 			},
 			[]Option{},
+			ErrInvalidLimitPolicy,
 			nil,
-			map[string]*Limit{
-				"resource:action:total": {
-					Resource:    "resource",
-					Action:      "action",
-					Per:         LimitPerTotal,
-					Unlimited:   false,
-					MaxRequests: 100,
-					Period:      time.Minute,
-				},
-			},
 		},
 		{
 			"MultipleLimits",
@@ -69,25 +246,8 @@ func TestNewLimiter(t *testing.T) {
 				},
 			},
 			[]Option{},
+			ErrInvalidLimitPolicy,
 			nil,
-			map[string]*Limit{
-				"res1:action1:total": {
-					Resource:    "res1",
-					Action:      "action1",
-					Per:         LimitPerTotal,
-					Unlimited:   false,
-					MaxRequests: 100,
-					Period:      time.Minute,
-				},
-				"res2:action2:total": {
-					Resource:    "res2",
-					Action:      "action2",
-					Per:         LimitPerTotal,
-					Unlimited:   false,
-					MaxRequests: 100,
-					Period:      time.Second,
-				},
-			},
 		},
 		{
 			"DuplicateLimits",
@@ -115,6 +275,23 @@ func TestNewLimiter(t *testing.T) {
 			nil,
 		},
 		{
+			"InvalidLimit",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   true,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			ErrInvalidLimit,
+			nil,
+		},
+		{
 			"NoLimits",
 			10,
 			[]*Limit{},
@@ -130,6 +307,22 @@ func TestNewLimiter(t *testing.T) {
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
 					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
@@ -151,6 +344,22 @@ func TestNewLimiter(t *testing.T) {
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
 			},
 			[]Option{WithNumberBuckets(0)},
 			ErrInvalidNumberBuckets,
@@ -168,7 +377,7 @@ func TestNewLimiter(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, l)
-			assert.Equal(t, l.limits, tc.expectLimits)
+			assert.Equal(t, l.policies, tc.expectPolicies)
 		})
 	}
 }
@@ -243,7 +452,7 @@ func TestLimiterAllow(t *testing.T) {
 			},
 		},
 		{
-			"MissingLimit",
+			"MissingLimitPolicy",
 			10,
 			[]*Limit{
 				{
@@ -277,7 +486,7 @@ func TestLimiterAllow(t *testing.T) {
 					resource:      "missing",
 					action:        "missing",
 					expectAllowed: false,
-					expectErr:     ErrLimitNotFound,
+					expectErr:     ErrLimitPolicyNotFound,
 					expectQuota:   nil,
 				},
 			},
@@ -750,6 +959,201 @@ func TestLimiterAllow(t *testing.T) {
 				assert.Equal(t, r.expectQuota.used, q.used)
 				assert.Equal(t, r.expectQuota.Remaining(), q.Remaining())
 			}
+		})
+	}
+}
+
+func TestSetPolicyHeader(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name              string
+		maxSize           int
+		limits            []*Limit
+		options           []Option
+		resource          string
+		action            string
+		expectErr         error
+		expectHeader      string
+		expectHeaderValue string
+	}{
+		{
+			"ValidPolicy",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			"resource",
+			"action",
+			nil,
+			DefaultPolicyHeader,
+			`100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
+		},
+		{
+			"ValidPolicyAlternateHeader",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{WithPolicyHeader("Policy-Header")},
+			"resource",
+			"action",
+			nil,
+			"Policy-Header",
+			`100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
+		},
+		{
+			"PolicyNotFound",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			"resource-missing",
+			"action",
+			ErrLimitPolicyNotFound,
+			DefaultPolicyHeader,
+			``,
+		},
+		{
+			"Unlimited",
+			10,
+			[]*Limit{
+				{
+					Resource:  "resource",
+					Action:    "action",
+					Per:       LimitPerTotal,
+					Unlimited: true,
+				},
+				{
+					Resource:  "resource",
+					Action:    "action",
+					Per:       LimitPerIPAddress,
+					Unlimited: true,
+				},
+				{
+					Resource:  "resource",
+					Action:    "action",
+					Per:       LimitPerAuthToken,
+					Unlimited: true,
+				},
+				{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			"resource",
+			"action",
+			nil,
+			DefaultPolicyHeader,
+			``,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l, err := NewLimiter(tc.limits, tc.maxSize, tc.options...)
+			require.NoError(t, err)
+			require.NotNil(t, l)
+
+			h := make(http.Header)
+			err = l.SetPolicyHeader(tc.resource, tc.action, h)
+			if tc.expectErr != nil {
+				require.ErrorIs(t, err, tc.expectErr)
+				return
+			}
+			got := h.Get(tc.expectHeader)
+			assert.Equal(t, tc.expectHeaderValue, got)
 		})
 	}
 }

@@ -16,6 +16,7 @@ func TestGetOpts(t *testing.T) {
 		opts := getOpts()
 		testOpts := options{
 			withNumberBuckets: DefaultNumberBuckets,
+			withPolicyHeader:  DefaultPolicyHeader,
 		}
 		assert.Equal(t, opts, testOpts)
 	})
@@ -23,6 +24,16 @@ func TestGetOpts(t *testing.T) {
 		opts := getOpts(WithNumberBuckets(40))
 		testOpts := options{
 			withNumberBuckets: 40,
+			withPolicyHeader:  DefaultPolicyHeader,
+		}
+		assert.Equal(t, opts, testOpts)
+	})
+	t.Run("WithPolicyHeader", func(t *testing.T) {
+		opts := getOpts(WithPolicyHeader("Limit-Policy"))
+		testOpts := options{
+			withNumberBuckets: DefaultNumberBuckets,
+			withPolicyHeader:  "Limit-Policy",
+			withUsageHeader:   DefaultUsageHeader,
 		}
 		assert.Equal(t, opts, testOpts)
 	})

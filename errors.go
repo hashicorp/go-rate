@@ -39,4 +39,10 @@ var (
 	// ErrStopped is returned by Limiter.Allow if the limiter has been stopped
 	// and cannot return a quota.
 	ErrStopped = errors.New("limiter stopped")
+	// ErrInvalidLimitPolicy is returned by NewLimiter when a valid limit policy
+	// could not be created from the provided limits.
+	ErrInvalidLimitPolicy = errors.New("invalid limit policy")
+	// ErrLimitPolicyNotFound is returned by a Limiter when a limit policy
+	// could not be found for a given resource+action.
+	ErrLimitPolicyNotFound = errors.New("limit policy not found")
 )
