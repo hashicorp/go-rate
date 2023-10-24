@@ -51,6 +51,12 @@ type Limiter struct {
 //     header via SetPolicyHeader. This defaults to "RateLimit-Policy".
 //   - WithUsageHeader: Sets the HTTP Header key to use when setting the usage
 //     header via SetUsageHeader. This defaults to "RateLimit".
+//   - WithQuotaStorageCapacityMetric: Provides a gauge metric to report the
+//     total number of Quotas that can be stored by the Limiter. The default is
+//     to not report this metric.
+//   - WithQuotaStorageUsageMetric: Provides a gauge metric to report the
+//     current number of Quotas that are being stored by the Limiter. The
+//     default is to not report this metric.
 func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 	const op = "rate.NewLimiter"
 

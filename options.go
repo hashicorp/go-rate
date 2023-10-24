@@ -3,6 +3,8 @@
 
 package rate
 
+import "github.com/hashicorp/go-rate/metric"
+
 const (
 	// DefaultNumberBuckets is the default number of buckets created for the quota store.
 	DefaultNumberBuckets = 4096
@@ -13,6 +15,11 @@ const (
 	// DefaultUsageHeader is the default HTTP header for reporting quota usage.
 	DefaultUsageHeader = "RateLimit"
 )
+
+// nilGauge is a gauge that does nothing.
+type nilGauge struct{}
+
+func (n *nilGauge) Set(_ float64) {}
 
 // Option provides a way to pass optional arguments.
 type Option func(*options)
@@ -26,16 +33,20 @@ func getOpts(opt ...Option) options {
 }
 
 type options struct {
-	withNumberBuckets int
-	withPolicyHeader  string
-	withUsageHeader   string
+	withNumberBuckets              int
+	withPolicyHeader               string
+	withUsageHeader                string
+	withQuotaStorageCapacityMetric metric.Gauge
+	withQuotaStorageUsageMetric    metric.Gauge
 }
 
 func getDefaultOptions() options {
 	return options{
-		withNumberBuckets: DefaultNumberBuckets,
-		withPolicyHeader:  DefaultPolicyHeader,
-		withUsageHeader:   DefaultUsageHeader,
+		withNumberBuckets:              DefaultNumberBuckets,
+		withPolicyHeader:               DefaultPolicyHeader,
+		withUsageHeader:                DefaultUsageHeader,
+		withQuotaStorageCapacityMetric: &nilGauge{},
+		withQuotaStorageUsageMetric:    &nilGauge{},
 	}
 }
 
@@ -59,5 +70,31 @@ func WithPolicyHeader(h string) Option {
 func WithUsageHeader(h string) Option {
 	return func(o *options) {
 		o.withUsageHeader = h
+	}
+}
+
+// WithQuotaStorageCapacityMetric is used to provide a metric that will record
+// the total capacity available to the Limiter for storing Quotas.
+func WithQuotaStorageCapacityMetric(g metric.Gauge) Option {
+	return func(o *options) {
+		switch {
+		case g == nil:
+			o.withQuotaStorageUsageMetric = &nilGauge{}
+		default:
+			o.withQuotaStorageCapacityMetric = g
+		}
+	}
+}
+
+// WithQuotaStorageUsageMetric is used to provide a metric that will record the
+// current number of Quotas that are being stored by the Limiter.
+func WithQuotaStorageUsageMetric(g metric.Gauge) Option {
+	return func(o *options) {
+		switch {
+		case g == nil:
+			o.withQuotaStorageUsageMetric = &nilGauge{}
+		default:
+			o.withQuotaStorageUsageMetric = g
+		}
 	}
 }

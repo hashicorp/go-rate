@@ -1257,3 +1257,334 @@ func TestSetUsageHeader(t *testing.T) {
 		})
 	}
 }
+
+func TestLimiterQuotaCapacityMetric(t *testing.T) {
+	cases := []struct {
+		name    string
+		maxSize int
+		limits  []*Limit
+		gauge   *testGauge
+	}{
+		{
+			"NewGauge",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 25,
+					Period:      time.Minute,
+				},
+			},
+			&testGauge{},
+		},
+		{
+			"ExistingGauge",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 25,
+					Period:      time.Minute,
+				},
+			},
+			&testGauge{v: 20},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l, err := NewLimiter(tc.limits, tc.maxSize, WithQuotaStorageCapacityMetric(tc.gauge))
+			require.NoError(t, err)
+			require.NotNil(t, l)
+
+			require.Equal(t, tc.maxSize, int(tc.gauge.v))
+		})
+	}
+}
+
+func TestLimiterQuotaUsageMetric(t *testing.T) {
+	cases := []struct {
+		name        string
+		maxSize     int
+		limits      []*Limit
+		gauge       *testGauge
+		reqs        []allowTestRequest
+		expectUsage float64
+	}{
+		{
+			"OneRequest",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 25,
+					Period:      time.Minute,
+				},
+			},
+			&testGauge{},
+			[]allowTestRequest{
+				{
+					resource:      "resource",
+					action:        "action",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limit{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerAuthToken,
+							Unlimited:   false,
+							MaxRequests: 25,
+							Period:      time.Minute,
+						},
+						used: 1,
+					},
+				},
+			},
+			3, // one quota per ip, authtoken, and in total
+		},
+		{
+			"MultipleIPAddress",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 3,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 2,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 1,
+					Period:      time.Minute,
+				},
+			},
+			&testGauge{},
+			[]allowTestRequest{
+				{
+					resource:      "resource",
+					action:        "action",
+					authToken:     "token1",
+					ip:            "ip1",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limit{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerAuthToken,
+							Unlimited:   false,
+							MaxRequests: 1,
+							Period:      time.Minute,
+						},
+						used: 1,
+					},
+				},
+				{
+					resource:      "resource",
+					action:        "action",
+					authToken:     "token2",
+					ip:            "ip2",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limit{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerAuthToken,
+							Unlimited:   false,
+							MaxRequests: 1,
+							Period:      time.Minute,
+						},
+						used: 1,
+					},
+				},
+				{
+					resource:      "resource",
+					action:        "action",
+					authToken:     "token3",
+					ip:            "ip3",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limit{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerTotal,
+							Unlimited:   false,
+							MaxRequests: 3,
+							Period:      time.Minute,
+						},
+						used: 3,
+					},
+				},
+			},
+			7, // one per ip (3). one per auth token (3). plus one in total
+		},
+		{
+			"MultipleAuthTokens",
+			10,
+			[]*Limit{
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					Unlimited:   false,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					Unlimited:   false,
+					MaxRequests: 2,
+					Period:      time.Minute,
+				},
+				{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					Unlimited:   false,
+					MaxRequests: 1,
+					Period:      time.Minute,
+				},
+			},
+			&testGauge{},
+			[]allowTestRequest{
+				{
+					resource:      "resource",
+					action:        "action",
+					authToken:     "token1",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limit{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerAuthToken,
+							Unlimited:   false,
+							MaxRequests: 1,
+							Period:      time.Minute,
+						},
+						used: 1,
+					},
+				},
+				{
+					resource:      "resource",
+					action:        "action",
+					authToken:     "token2",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limit{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerIPAddress,
+							Unlimited:   false,
+							MaxRequests: 2,
+							Period:      time.Minute,
+						},
+						used: 2,
+					},
+				},
+			},
+			4, // one per token (2), plus one IP, and one total
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l, err := NewLimiter(tc.limits, tc.maxSize, WithQuotaStorageUsageMetric(tc.gauge))
+			require.NoError(t, err)
+			require.NotNil(t, l)
+
+			for _, r := range tc.reqs {
+				allowed, q, err := l.Allow(r.resource, r.action, r.ip, r.authToken)
+				if r.expectErr != nil {
+					require.EqualError(t, err, r.expectErr.Error())
+					assert.Equal(t, r.expectAllowed, allowed)
+					continue
+				}
+
+				require.NoError(t, err)
+				assert.Equal(t, r.expectAllowed, allowed)
+				assert.Equal(t, r.expectQuota.limit, q.limit)
+				assert.Equal(t, r.expectQuota.used, q.used)
+				assert.Equal(t, r.expectQuota.Remaining(), q.Remaining())
+			}
+
+			assert.Equal(t, tc.expectUsage, tc.gauge.v)
+		})
+	}
+}

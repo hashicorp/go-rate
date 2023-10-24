@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/go-rate/metric"
 )
 
 type entry struct {
@@ -34,6 +36,8 @@ type expirableStore struct {
 	bucketTTL          time.Duration
 	numberBuckets      int
 	nextBucketToExpire int
+	capacityMetric     metric.Gauge
+	usageMetric        metric.Gauge
 
 	mu sync.Mutex
 
@@ -80,9 +84,13 @@ func newExpirableStore(maxSize int, maxEntryTTL time.Duration, o ...Option) (*ex
 				}
 			},
 		},
-		cancelFunc: cancel,
-		ctx:        ctx,
+		cancelFunc:     cancel,
+		ctx:            ctx,
+		capacityMetric: opts.withQuotaStorageCapacityMetric,
+		usageMetric:    opts.withQuotaStorageUsageMetric,
 	}
+	s.capacityMetric.Set(float64(maxSize))
+	s.usageMetric.Set(float64(0))
 
 	go s.deleteExpired()
 	return s, nil
@@ -135,6 +143,8 @@ func (s *expirableStore) fetch(id string, limit *Limit) (*Quota, error) {
 		e.value.reset(limit)
 		s.addToBucket(e)
 	}
+
+	s.usageMetric.Set(float64(len(s.items)))
 
 	return e.value, nil
 }
@@ -200,6 +210,7 @@ func (s *expirableStore) emptyExpiredBucket() {
 	for _, delEnt := range s.buckets[toExpire].entries {
 		s.removeEntry(delEnt)
 	}
+	s.usageMetric.Set(float64(len(s.items)))
 }
 
 // removeEntry removes the entry from the store and adds the entry back to
