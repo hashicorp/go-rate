@@ -89,6 +89,9 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 // A request is not allowed if:
 //   - Any of the associated quotas have been exhausted.
 //   - A new quota needs to be stored but there is no available space to store it.
+//     The error returned in this case will be a ErrLimiterFull with a provided
+//     RetryIn duration. Callers should use this time as an estimation of when
+//     the limiter should no longer be full.
 //   - There is no corresponding limit for the resource and action.
 func (l *Limiter) Allow(resource, action string) (allowed bool, quota *Quota, err error) {
 	l.mu.RLock()

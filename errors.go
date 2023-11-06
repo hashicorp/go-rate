@@ -3,12 +3,22 @@
 
 package rate
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
+
+// ErrLimiterFull is returned by Limiter.Allow when the limiter cannot store
+// any additional quotas.
+type ErrLimiterFull struct {
+	RetryIn time.Duration
+}
+
+func (l *ErrLimiterFull) Error() string {
+	return "limiter full"
+}
 
 var (
-	// ErrLimiterFull is returned by Limiter.Allow when the limiter cannot store
-	// any additional quotas.
-	ErrLimiterFull = errors.New("limiter full")
 	// ErrLimitNotFound is returned by Limiter.Allow when a limit could not be
 	// found for a given resource+action.
 	ErrLimitNotFound = errors.New("limit not found")

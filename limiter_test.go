@@ -388,7 +388,7 @@ func TestLimiterAllow(t *testing.T) {
 					resource:      "resource3",
 					action:        "action3",
 					expectAllowed: false,
-					expectErr:     ErrLimiterFull,
+					expectErr:     &ErrLimiterFull{RetryIn: (time.Minute / time.Duration(DefaultNumberBuckets-1))},
 					expectQuota:   nil,
 				},
 				// However, requests for quotas already in the store should
@@ -442,6 +442,11 @@ func TestLimiterAllow(t *testing.T) {
 				if r.expectErr != nil {
 					require.EqualError(t, err, r.expectErr.Error())
 					assert.Equal(t, r.expectAllowed, allowed)
+					if want, ok := r.expectErr.(*ErrLimiterFull); ok {
+						got, ok := err.(*ErrLimiterFull)
+						assert.True(t, ok, "did not get an ErrLimiterFull error")
+						assert.Equal(t, want.RetryIn, got.RetryIn)
+					}
 					continue
 				}
 

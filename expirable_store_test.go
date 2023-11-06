@@ -124,7 +124,7 @@ func Test_storeCapacity(t *testing.T) {
 	}
 
 	_, err = s.fetch(fmt.Sprintf("id-%d", maxSize), limit)
-	require.ErrorIs(t, err, ErrLimiterFull)
+	require.EqualError(t, err, (&ErrLimiterFull{}).Error())
 }
 
 func Test_storeDeleteExpired(t *testing.T) {

@@ -149,7 +149,15 @@ func (s *expirableStore) add(e *entry) error {
 		panic(fmt.Sprintf("%s: called without lock", op))
 	}
 	if _, ok := s.items[e.key]; !ok && len(s.items) >= s.maxSize {
-		return ErrLimiterFull
+		// This is hopefully a reasonable estimate of when space will free up.
+		// However, it might not be accurate:
+		// 1. This is really an upper-bound on when the delete go routine
+		// should run again. So space may free up sooner if the routine runs at
+		// an earlier time.
+		// 2. When the delete go routine runs, it is possible that it does not
+		// have any quotas to delete. In which case clients would need to wait
+		// longer until there is a bucket that has quotas that have expired.
+		return &ErrLimiterFull{RetryIn: s.bucketTTL}
 	}
 	s.items[e.key] = e
 	s.addToBucket(e)
