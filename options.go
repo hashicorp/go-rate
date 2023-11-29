@@ -7,7 +7,7 @@ import "github.com/hashicorp/go-rate/metric"
 
 const (
 	// DefaultNumberBuckets is the default number of buckets created for the quota store.
-	DefaultNumberBuckets = 4096
+	DefaultNumberBuckets = 61
 
 	// DefaultPolicyHeader is the default HTTP header for reporting the rate limit policy.
 	DefaultPolicyHeader = "RateLimit-Policy"

@@ -54,13 +54,13 @@ jobs:
       - name: Bench New
         run: |
           # Run benchmarks without running any tests
-          go test -bench=. -count=10 -run=^# | tee new.txt
+          go test -timeout=120m -bench=. -count=5 -run=^# | tee new.txt
       - name: Bench Old
         run: |
           git checkout "${GITHUB_BASE_REF}"
           go mod download
           # Run benchmarks without running any tests
-          go test -bench=. -count=10 -run=^# | tee old.txt
+          go test -timeout=120m -bench=. -count=5 -run=^# | tee old.txt
           git checkout "${GITHUB_HEAD_REF}"
       - name: Benchstat
         run: |

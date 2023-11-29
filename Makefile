@@ -32,7 +32,7 @@ cover-html:
 
 .PHONY: bench
 bench:
-	go test -v -bench=. -count=1 -run=^#
+	go test -timeout=120m -v -bench=. -count=1 -run=^#
 
 .PHONY: copywrite
 copywrite:

@@ -5,6 +5,7 @@ package rate
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -176,6 +177,57 @@ func Test_storeDeleteExpired(t *testing.T) {
 	got = len(s.items)
 	s.mu.Unlock()
 	require.Equal(t, 5, got)
+}
+
+func Test_ResetBucketSize(t *testing.T) {
+	maxPeriod := time.Millisecond * 500
+	numberBuckets := 1
+
+	s, err := newExpirableStore(20, maxPeriod, WithNumberBuckets(numberBuckets))
+	require.NoError(t, err)
+
+	limit := &Limit{
+		Resource:    "resource",
+		Action:      "action",
+		Per:         LimitPerTotal,
+		Unlimited:   false,
+		MaxRequests: 10,
+		Period:      maxPeriod,
+	}
+
+	quotas := bucketSizeThreshold + 1
+	ids := make([]string, 0, quotas)
+	for i := 0; i < quotas; i++ {
+		ids = append(ids, fmt.Sprintf("id-%d", i))
+	}
+
+	for _, id := range ids {
+		_, err := s.fetch(id, limit)
+		require.NoError(t, err)
+	}
+
+	s.mu.Lock()
+	got := len(s.items)
+	gotBucketSize := len(s.buckets[0].entries)
+	require.Equal(t, 1, len(s.buckets))
+	initialBucketPtr := reflect.ValueOf(s.buckets[0].entries).Pointer()
+	s.mu.Unlock()
+	require.Equal(t, quotas, got)
+	require.Equal(t, quotas, gotBucketSize)
+
+	// sleep to let cleanup run
+	time.Sleep(maxPeriod * 2)
+
+	s.mu.Lock()
+	got = len(s.items)
+	gotBucketSize = len(s.buckets[0].entries)
+	newBucketPtr := reflect.ValueOf(s.buckets[0].entries).Pointer()
+	s.mu.Unlock()
+	require.Equal(t, 0, got)
+	require.Equal(t, 0, gotBucketSize)
+	// Check that we have a pointer to a new map, since it should have allocated
+	// a new one to reduce the capacity.
+	require.NotEqual(t, initialBucketPtr, newBucketPtr)
 }
 
 func Test_storeFetchExpired(t *testing.T) {

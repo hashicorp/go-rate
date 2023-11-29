@@ -12,6 +12,13 @@ import (
 	"github.com/hashicorp/go-rate/metric"
 )
 
+// bucketSizeThreshold is used to determine when a bucket should get
+// reallocated to release some memory to get garbage collected. While not
+// officially documented, and therefore subject to change, a map will grow once
+// it requires more than 8 keys, so that is used as the threshold when deciding
+// to re-allocate a bucket's entries map.
+const bucketSizeThreshold = 8
+
 type entry struct {
 	key   string
 	value *Quota
@@ -61,12 +68,18 @@ func newExpirableStore(maxSize int, maxEntryTTL time.Duration, o ...Option) (*ex
 		return nil, fmt.Errorf("%s: number of buckets must be greater than zero: %w", op, ErrInvalidNumberBuckets)
 	}
 
-	bucketTTL := (maxEntryTTL) / time.Duration(opts.withNumberBuckets-1)
+	var bucketTTL time.Duration
+	switch opts.withNumberBuckets {
+	case 1:
+		bucketTTL = maxEntryTTL
+	default:
+		bucketTTL = maxEntryTTL / time.Duration(opts.withNumberBuckets-1)
+	}
 
 	buckets := make([]bucket, opts.withNumberBuckets)
 	for i := 0; i < opts.withNumberBuckets; i++ {
 		buckets[i] = bucket{
-			entries: make(map[string]*entry, maxSize),
+			entries: make(map[string]*entry),
 		}
 	}
 
@@ -207,8 +220,22 @@ func (s *expirableStore) emptyExpiredBucket() {
 		s.mu.Lock()
 	}
 	defer s.mu.Unlock()
+
+	// Get the length of the map prior to deleting entries. While we cannot
+	// get the true capacity of the map, it must be at least this length,
+	// and deleting the items will not reduce its capacity. So this length
+	// will be used to determine if we should re-allocate the map to allow
+	// some memory to be released.
+	entryCount := len(s.buckets[toExpire].entries)
 	for _, delEnt := range s.buckets[toExpire].entries {
 		s.removeEntry(delEnt)
+	}
+
+	// Only re-allocate if the map grew beyond the initial size.
+	if entryCount > bucketSizeThreshold {
+		s.buckets[toExpire] = bucket{
+			entries: make(map[string]*entry),
+		}
 	}
 	s.usageMetric.Set(float64(len(s.items)))
 }
