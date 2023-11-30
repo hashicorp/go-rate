@@ -63,6 +63,8 @@ func NewLimiter(limits []Limit, maxSize int, o ...Option) (*Limiter, error) {
 	switch {
 	case len(limits) <= 0:
 		return nil, fmt.Errorf("%s: %w", op, ErrEmptyLimits)
+	case allUnlimited(limits):
+		return nil, fmt.Errorf("%s: %w", op, ErrUnlimited)
 	}
 
 	opts := getOpts(o...)
@@ -153,6 +155,9 @@ func (l *Limiter) SetUsageHeader(quota *Quota, header http.Header) {
 //     RetryIn duration. Callers should use this time as an estimation of when
 //     the limiter should no longer be full.
 //   - There is no corresponding limit for the resource and action.
+//
+// If all of the limits for the given resource and action are Unlimited, the
+// action will be allowed, but the quota returned will be nil.
 func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, quota *Quota, err error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -187,23 +192,33 @@ func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, q
 			return
 		}
 
-		q, err = l.quotaFetcher.fetch(id, limit)
-		if err != nil {
-			allowed = false
-			return
-		}
+		switch ll := limit.(type) {
+		case *Unlimited:
+			continue
+		case *Limited:
+			var q *Quota
+			q, err = l.quotaFetcher.fetch(id, ll)
+			if err != nil {
+				allowed = false
+				return
+			}
 
-		if q.Remaining() <= 0 {
-			allowed = false
-			quota = q
-			return
-		}
+			if q.Remaining() <= 0 {
+				allowed = false
+				quota = q
+				return
+			}
 
-		quotas[per] = q
+			quotas[per] = q
+		}
 	}
 
 	for _, per := range allowOrder {
-		q, _ := quotas[per]
+		q, ok := quotas[per]
+		if !ok {
+			// we may not have a quota if the corresponding limit is Unlimited.
+			continue
+		}
 		q.Consume()
 		if quota == nil || q.Remaining() < quota.Remaining() {
 			quota = q
@@ -220,4 +235,14 @@ func (l *Limiter) Shutdown() error {
 	defer l.mu.RUnlock()
 
 	return l.quotaFetcher.shutdown()
+}
+
+func allUnlimited(limits []Limit) bool {
+	for _, l := range limits {
+		switch l.(type) {
+		case *Limited:
+			return false
+		}
+	}
+	return true
 }

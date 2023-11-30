@@ -48,4 +48,7 @@ var (
 	// ErrLimitPolicyNotFound is returned by a Limiter when a limit policy
 	// could not be found for a given resource+action.
 	ErrLimitPolicyNotFound = errors.New("limit policy not found")
+	// ErrUnlimited is returned by NewLimiter when all of the provided Limits
+	// are Unlimited.
+	ErrUnlimited = errors.New("all limits are Unlimited")
 )

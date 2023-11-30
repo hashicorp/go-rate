@@ -276,6 +276,30 @@ func TestNewLimiter(t *testing.T) {
 			nil,
 		},
 		{
+			"AllUnlimited",
+			10,
+			[]Limit{
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerTotal,
+				},
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerIPAddress,
+				},
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerAuthToken,
+				},
+			},
+			[]Option{},
+			ErrUnlimited,
+			nil,
+		},
+		{
 			"InvalidMaxSize",
 			0,
 			[]Limit{
@@ -414,6 +438,102 @@ func TestLimiterAllow(t *testing.T) {
 						},
 						used: 1,
 					},
+				},
+			},
+		},
+		{
+			"OneRequestUnlimitedPerAuthToken",
+			10,
+			[]Limit{
+				&Limited{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				&Limited{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerAuthToken,
+				},
+			},
+			[]Option{},
+			[]allowTestRequest{
+				{
+					resource:      "resource",
+					action:        "action",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limited{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerIPAddress,
+							MaxRequests: 50,
+							Period:      time.Minute,
+						},
+						used: 1,
+					},
+				},
+			},
+		},
+		{
+			"AllUnlimitedForResourceAction",
+			10,
+			[]Limit{
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerTotal,
+				},
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerIPAddress,
+				},
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerAuthToken,
+				},
+				&Limited{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				&Limited{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				&Limited{
+					Resource:    "resource2",
+					Action:      "action",
+					Per:         LimitPerAuthToken,
+					MaxRequests: 25,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			[]allowTestRequest{
+				{
+					resource:      "resource",
+					action:        "action",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota:   nil,
 				},
 			},
 		},
