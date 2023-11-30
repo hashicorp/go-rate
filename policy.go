@@ -29,10 +29,10 @@ func newLimitPolicy(resource, action string) *limitPolicy {
 	}
 }
 
-// String returns a string representation of the LimitPolicy. This is formatted
-// for use as a rate limit policy HTTP header as outlined in:
+// httpHeaderValue returns a string representation of the LimitPolicy. This is
+// formatted for use as a rate limit policy HTTP header as outlined in:
 // https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/
-func (p *limitPolicy) String() string {
+func (p *limitPolicy) httpHeaderValue() string {
 	return p.policy
 }
 

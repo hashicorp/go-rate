@@ -223,7 +223,7 @@ func TestLimitPolicyLimit(t *testing.T) {
 	}
 }
 
-func TestLimitPolicyString(t *testing.T) {
+func TestLimitPolicy_httpHeaderValue(t *testing.T) {
 	cases := []struct {
 		name        string
 		limitPolicy *limitPolicy
@@ -435,7 +435,7 @@ func TestLimitPolicyString(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := tc.limitPolicy.String()
+			got := tc.limitPolicy.httpHeaderValue()
 			assert.Equal(t, tc.expect, got)
 		})
 	}

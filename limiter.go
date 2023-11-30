@@ -125,12 +125,12 @@ func (l *Limiter) SetPolicyHeader(resource, action string, header http.Header) e
 	if !ok {
 		return ErrLimitPolicyNotFound
 	}
-	p := pol.String()
+	p := pol.httpHeaderValue()
 	if p == "" {
 		return nil
 	}
 
-	header.Set(l.policyHeader, pol.String())
+	header.Set(l.policyHeader, pol.httpHeaderValue())
 	return nil
 }
 
