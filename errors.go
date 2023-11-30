@@ -28,6 +28,9 @@ var (
 	ErrEmptyLimits = errors.New("limits must not be empty")
 	// ErrInvalidLimit is returned by NewLimiter when a limit is not valid.
 	ErrInvalidLimit = errors.New("invalid limit")
+	// ErrInvalidLimitPer is returned by Limit.validate when a Limit has a invalid
+	// LimitPer.
+	ErrInvalidLimitPer = errors.New(`invalid limit per, must be one of "total", "ip-address", or "auth-token"`)
 	// ErrDuplicateLimit is returned by NewLimiter when it is provided duplicate
 	// limits.
 	ErrDuplicateLimit = errors.New("duplicate limit")

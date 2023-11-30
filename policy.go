@@ -14,7 +14,7 @@ type limitPolicy struct {
 	resource string
 	action   string
 
-	m map[LimitPer]*Limit
+	m map[LimitPer]Limit
 
 	policy string
 }
@@ -25,7 +25,7 @@ func newLimitPolicy(resource, action string) *limitPolicy {
 	return &limitPolicy{
 		resource: resource,
 		action:   action,
-		m:        make(map[LimitPer]*Limit, 3),
+		m:        make(map[LimitPer]Limit, 3),
 	}
 }
 
@@ -38,7 +38,7 @@ func (p *limitPolicy) String() string {
 
 // limit returns the corresponding limit for the given LimitPer. If the policy
 // does not have a corresponding limit, ErrLimitNotFound is returned.
-func (p *limitPolicy) limit(per LimitPer) (*Limit, error) {
+func (p *limitPolicy) limit(per LimitPer) (Limit, error) {
 	l, ok := p.m[per]
 	if !ok {
 		return nil, ErrLimitNotFound
@@ -46,21 +46,23 @@ func (p *limitPolicy) limit(per LimitPer) (*Limit, error) {
 	return l, nil
 }
 
-func (p *limitPolicy) add(l *Limit) error {
+func (p *limitPolicy) add(l Limit) error {
+	if err := l.validate(); err != nil {
+		return err
+	}
+
 	switch {
-	case !l.IsValid():
-		return ErrInvalidLimit
-	case l.Resource != p.resource:
+	case l.GetResource() != p.resource:
 		return fmt.Errorf("limit's resource does not match limit policy's: %w", ErrInvalidLimit)
-	case l.Action != p.action:
+	case l.GetAction() != p.action:
 		return fmt.Errorf("limit's action does not match limit policy's: %w", ErrInvalidLimit)
 	}
 
-	if _, ok := p.m[l.Per]; ok {
+	if _, ok := p.m[l.GetPer()]; ok {
 		return ErrDuplicateLimit
 	}
 
-	p.m[l.Per] = l
+	p.m[l.GetPer()] = l
 	p.buildStr()
 	return nil
 }
@@ -69,10 +71,14 @@ func (p *limitPolicy) buildStr() {
 	s := make([]string, 0, 3)
 	for _, per := range requiredLimitPer {
 		l, ok := p.m[per]
-		if !ok || l.Unlimited {
+		if !ok {
 			continue
 		}
-		s = append(s, fmt.Sprintf("%d;w=%d;comment=%q", l.MaxRequests, uint64(l.Period.Seconds()), l.Per.String()))
+		switch ll := l.(type) {
+		case *Limited:
+			s = append(s, fmt.Sprintf("%d;w=%d;comment=%q", ll.MaxRequests, uint64(ll.Period.Seconds()), ll.Per.String()))
+		}
+
 	}
 
 	p.policy = strings.Join(s, ", ")

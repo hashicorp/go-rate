@@ -15,17 +15,16 @@ func TestLimitPolicy_add(t *testing.T) {
 	cases := []struct {
 		name        string
 		limitPolicy *limitPolicy
-		add         *Limit
+		add         Limit
 		expectErr   error
 	}{
 		{
 			"NoError",
 			newLimitPolicy("resource", "action"),
-			&Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -34,12 +33,11 @@ func TestLimitPolicy_add(t *testing.T) {
 		{
 			"InvalidLimit",
 			newLimitPolicy("resource", "action"),
-			&Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerTotal,
-				Unlimited:   true,
-				MaxRequests: 10,
+				MaxRequests: 0,
 				Period:      time.Minute,
 			},
 			ErrInvalidLimit,
@@ -47,11 +45,10 @@ func TestLimitPolicy_add(t *testing.T) {
 		{
 			"IncorrectResource",
 			newLimitPolicy("resource", "action"),
-			&Limit{
+			&Limited{
 				Resource:    "resource1",
 				Action:      "action",
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -60,11 +57,10 @@ func TestLimitPolicy_add(t *testing.T) {
 		{
 			"IncorrectAction",
 			newLimitPolicy("resource", "action"),
-			&Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action1",
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -74,21 +70,19 @@ func TestLimitPolicy_add(t *testing.T) {
 			"DuplicateLimit",
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
-				lp.add(&Limit{
+				lp.add(&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 20,
 					Period:      time.Minute,
 				})
 				return lp
 			}(),
-			&Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -113,7 +107,7 @@ func TestLimitPolicyLimit(t *testing.T) {
 		name        string
 		limitPolicy *limitPolicy
 		per         LimitPer
-		expect      *Limit
+		expect      Limit
 		expectErr   error
 	}{
 		{
@@ -121,11 +115,10 @@ func TestLimitPolicyLimit(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -134,11 +127,10 @@ func TestLimitPolicyLimit(t *testing.T) {
 				return lp
 			}(),
 			LimitPerTotal,
-			&Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -149,11 +141,10 @@ func TestLimitPolicyLimit(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -162,11 +153,10 @@ func TestLimitPolicyLimit(t *testing.T) {
 				return lp
 			}(),
 			LimitPerAuthToken,
-			&Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerAuthToken,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -177,11 +167,10 @@ func TestLimitPolicyLimit(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -190,11 +179,10 @@ func TestLimitPolicyLimit(t *testing.T) {
 				return lp
 			}(),
 			LimitPerIPAddress,
-			&Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerIPAddress,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -205,11 +193,10 @@ func TestLimitPolicyLimit(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -247,11 +234,10 @@ func TestLimitPolicyString(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -269,18 +255,16 @@ func TestLimitPolicyString(t *testing.T) {
 					var err error
 					switch per {
 					case LimitPerTotal:
-						err = lp.add(&Limit{
-							Resource:  "resource",
-							Action:    "action",
-							Per:       per,
-							Unlimited: true,
+						err = lp.add(&Unlimited{
+							Resource: "resource",
+							Action:   "action",
+							Per:      per,
 						})
 					default:
-						err = lp.add(&Limit{
+						err = lp.add(&Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         per,
-							Unlimited:   false,
 							MaxRequests: 10,
 							Period:      time.Minute,
 						})
@@ -299,18 +283,16 @@ func TestLimitPolicyString(t *testing.T) {
 					var err error
 					switch per {
 					case LimitPerIPAddress:
-						err = lp.add(&Limit{
-							Resource:  "resource",
-							Action:    "action",
-							Per:       per,
-							Unlimited: true,
+						err = lp.add(&Unlimited{
+							Resource: "resource",
+							Action:   "action",
+							Per:      per,
 						})
 					default:
-						err = lp.add(&Limit{
+						err = lp.add(&Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         per,
-							Unlimited:   false,
 							MaxRequests: 10,
 							Period:      time.Minute,
 						})
@@ -329,18 +311,16 @@ func TestLimitPolicyString(t *testing.T) {
 					var err error
 					switch per {
 					case LimitPerAuthToken:
-						err = lp.add(&Limit{
-							Resource:  "resource",
-							Action:    "action",
-							Per:       per,
-							Unlimited: true,
+						err = lp.add(&Unlimited{
+							Resource: "resource",
+							Action:   "action",
+							Per:      per,
 						})
 					default:
-						err = lp.add(&Limit{
+						err = lp.add(&Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         per,
-							Unlimited:   false,
 							MaxRequests: 10,
 							Period:      time.Minute,
 						})
@@ -359,18 +339,16 @@ func TestLimitPolicyString(t *testing.T) {
 					var err error
 					switch per {
 					case LimitPerIPAddress, LimitPerAuthToken:
-						err = lp.add(&Limit{
-							Resource:  "resource",
-							Action:    "action",
-							Per:       per,
-							Unlimited: true,
+						err = lp.add(&Unlimited{
+							Resource: "resource",
+							Action:   "action",
+							Per:      per,
 						})
 					default:
-						err = lp.add(&Limit{
+						err = lp.add(&Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         per,
-							Unlimited:   false,
 							MaxRequests: 10,
 							Period:      time.Minute,
 						})
@@ -389,18 +367,16 @@ func TestLimitPolicyString(t *testing.T) {
 					var err error
 					switch per {
 					case LimitPerIPAddress, LimitPerTotal:
-						err = lp.add(&Limit{
-							Resource:  "resource",
-							Action:    "action",
-							Per:       per,
-							Unlimited: true,
+						err = lp.add(&Unlimited{
+							Resource: "resource",
+							Action:   "action",
+							Per:      per,
 						})
 					default:
-						err = lp.add(&Limit{
+						err = lp.add(&Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         per,
-							Unlimited:   false,
 							MaxRequests: 10,
 							Period:      time.Minute,
 						})
@@ -419,18 +395,16 @@ func TestLimitPolicyString(t *testing.T) {
 					var err error
 					switch per {
 					case LimitPerAuthToken, LimitPerTotal:
-						err = lp.add(&Limit{
-							Resource:  "resource",
-							Action:    "action",
-							Per:       per,
-							Unlimited: true,
+						err = lp.add(&Unlimited{
+							Resource: "resource",
+							Action:   "action",
+							Per:      per,
 						})
 					default:
-						err = lp.add(&Limit{
+						err = lp.add(&Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         per,
-							Unlimited:   false,
 							MaxRequests: 10,
 							Period:      time.Minute,
 						})
@@ -446,11 +420,10 @@ func TestLimitPolicyString(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
-						Resource:  "resource",
-						Action:    "action",
-						Per:       per,
-						Unlimited: true,
+					err := lp.add(&Unlimited{
+						Resource: "resource",
+						Action:   "action",
+						Per:      per,
 					})
 					require.NoError(t, err)
 				}
@@ -479,11 +452,10 @@ func TestLimitPolicy_validate(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -514,11 +486,10 @@ func TestLimitPolicy_validate(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerIPAddress, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -533,11 +504,10 @@ func TestLimitPolicy_validate(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerAuthToken} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})
@@ -552,11 +522,10 @@ func TestLimitPolicy_validate(t *testing.T) {
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
 				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress} {
-					err := lp.add(&Limit{
+					err := lp.add(&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         per,
-						Unlimited:   false,
 						MaxRequests: 10,
 						Period:      time.Minute,
 					})

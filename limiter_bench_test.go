@@ -12,7 +12,7 @@ import (
 func BenchmarkAllow(b *testing.B) {
 	numResources := 128
 	resources := make([]string, 128)
-	limits := make([]*Limit, 0, 3*numResources)
+	limits := make([]Limit, 0, 3*numResources)
 	action := "action"
 
 	for i := 0; i < numResources; i++ {
@@ -20,27 +20,24 @@ func BenchmarkAllow(b *testing.B) {
 		resources[i] = res
 		limits = append(
 			limits,
-			&Limit{
+			&Limited{
 				Resource:    res,
 				Action:      action,
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: 100,
 				Period:      time.Minute,
 			},
-			&Limit{
+			&Limited{
 				Resource:    res,
 				Action:      action,
 				Per:         LimitPerIPAddress,
-				Unlimited:   false,
 				MaxRequests: 100,
 				Period:      time.Minute,
 			},
-			&Limit{
+			&Limited{
 				Resource:    res,
 				Action:      action,
 				Per:         LimitPerAuthToken,
-				Unlimited:   false,
 				MaxRequests: 100,
 				Period:      time.Minute,
 			},

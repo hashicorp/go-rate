@@ -1,40 +1,39 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-package rate_test
+package rate
 
 import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-rate"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidLimitPer(t *testing.T) {
 	cases := []struct {
 		name string
-		in   rate.LimitPer
+		in   LimitPer
 		want bool
 	}{
 		{
-			rate.LimitPerTotal.String(),
-			rate.LimitPerTotal,
+			LimitPerTotal.String(),
+			LimitPerTotal,
 			true,
 		},
 		{
-			rate.LimitPerIPAddress.String(),
-			rate.LimitPerIPAddress,
+			LimitPerIPAddress.String(),
+			LimitPerIPAddress,
 			true,
 		},
 		{
-			rate.LimitPerAuthToken.String(),
-			rate.LimitPerAuthToken,
+			LimitPerAuthToken.String(),
+			LimitPerAuthToken,
 			true,
 		},
 		{
 			"Invalid",
-			rate.LimitPer("invalid"),
+			LimitPer("invalid"),
 			false,
 		},
 	}
@@ -50,183 +49,128 @@ func TestValidLimitPer(t *testing.T) {
 func TestValidLimit(t *testing.T) {
 	cases := []struct {
 		name string
-		in   *rate.Limit
-		want bool
+		in   Limit
+		err  error
 	}{
 		{
 			"Valid_TotalMaxRequests",
-			&rate.Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   false,
+				Per:         LimitPerTotal,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
-			true,
+			nil,
 		},
 		{
 			"Valid_IPAddressMaxRequests",
-			&rate.Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         rate.LimitPerIPAddress,
-				Unlimited:   false,
+				Per:         LimitPerIPAddress,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
-			true,
+			nil,
 		},
 		{
 			"Valid_AuthTokenMaxRequests",
-			&rate.Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         rate.LimitPerAuthToken,
-				Unlimited:   false,
+				Per:         LimitPerAuthToken,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
-			true,
+			nil,
 		},
 		{
 			"Valid_TotalUnlimited",
-			&rate.Limit{
-				Resource:    "resource",
-				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   true,
-				MaxRequests: 0,
-				Period:      0,
+			&Unlimited{
+				Resource: "resource",
+				Action:   "action",
+				Per:      LimitPerTotal,
 			},
-			true,
+			nil,
 		},
 		{
 			"Valid_IPAddressUnlimited",
-			&rate.Limit{
-				Resource:    "resource",
-				Action:      "action",
-				Per:         rate.LimitPerIPAddress,
-				Unlimited:   true,
-				MaxRequests: 0,
-				Period:      0,
+			&Unlimited{
+				Resource: "resource",
+				Action:   "action",
+				Per:      LimitPerIPAddress,
 			},
-			true,
+			nil,
 		},
 		{
 			"Valid_AuthTokenUnlimited",
-			&rate.Limit{
-				Resource:    "resource",
-				Action:      "action",
-				Per:         rate.LimitPerAuthToken,
-				Unlimited:   true,
-				MaxRequests: 0,
-				Period:      0,
+			&Unlimited{
+				Resource: "resource",
+				Action:   "action",
+				Per:      LimitPerAuthToken,
 			},
-			true,
+			nil,
 		},
 		{
 			"Invalid_LimitPerMaxRequests",
-			&rate.Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         rate.LimitPer("invalid"),
-				Unlimited:   false,
+				Per:         LimitPer("invalid"),
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
-			false,
+			ErrInvalidLimitPer,
 		},
 		{
 			"Invalid_LimitPerUnlimited",
-			&rate.Limit{
-				Resource:    "resource",
-				Action:      "action",
-				Per:         rate.LimitPer("invalid"),
-				Unlimited:   true,
-				MaxRequests: 0,
-				Period:      0,
+			&Unlimited{
+				Resource: "resource",
+				Action:   "action",
+				Per:      LimitPer("invalid"),
 			},
-			false,
+			ErrInvalidLimitPer,
 		},
 		{
 			"Invalid_MaxRequestsZeroPeriod",
-			&rate.Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   false,
+				Per:         LimitPerTotal,
 				MaxRequests: 50,
 				Period:      0,
 			},
-			false,
+			ErrInvalidLimit,
 		},
 		{
 			"Invalid_MaxRequestsNegativePeriod",
-			&rate.Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   false,
+				Per:         LimitPerTotal,
 				MaxRequests: 50,
 				Period:      time.Second * -1,
 			},
-			false,
+			ErrInvalidLimit,
 		},
 		{
 			"Invalid_ZeroMaxRequestsPeriod",
-			&rate.Limit{
+			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   false,
+				Per:         LimitPerTotal,
 				MaxRequests: 0,
 				Period:      time.Minute,
 			},
-			false,
-		},
-		{
-			"Invalid_UnlimitedMaxRequests",
-			&rate.Limit{
-				Resource:    "resource",
-				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   true,
-				MaxRequests: 50,
-				Period:      0,
-			},
-			false,
-		},
-		{
-			"Invalid_UnlimitedPeriod",
-			&rate.Limit{
-				Resource:    "resource",
-				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   true,
-				MaxRequests: 0,
-				Period:      time.Minute,
-			},
-			false,
-		},
-		{
-			"Invalid_UnlimitedMaxRequestsPeriod",
-			&rate.Limit{
-				Resource:    "resource",
-				Action:      "action",
-				Per:         rate.LimitPerTotal,
-				Unlimited:   true,
-				MaxRequests: 50,
-				Period:      time.Minute,
-			},
-			false,
+			ErrInvalidLimit,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := tc.in.IsValid()
-			assert.Equal(t, tc.want, got)
+			got := tc.in.validate()
+			assert.ErrorIs(t, got, tc.err)
 		})
 	}
 }

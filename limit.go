@@ -4,6 +4,7 @@
 package rate
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -34,35 +35,64 @@ const (
 
 // Limit defines the number of requests that can be made to perform an action
 // against a resource in a time period, allocated per IP address, auth token,
-// or in total.
-type Limit struct {
-	Resource string
-	Action   string
-	Per      LimitPer
+// or in total. A Limit is either Limited or Unlimited.
+type Limit interface {
+	// GetResource returns the resource.
+	GetResource() string
+	// GetAction returns the action.
+	GetAction() string
+	// GetPer returns the LimitPer.
+	GetPer() LimitPer
 
-	Unlimited bool
+	validate() error
+}
+
+// Limited is a Limit that defines the maximum number of requests that can be
+// made in a given time period.
+type Limited struct {
+	Action   string
+	Resource string
+	Per      LimitPer
 
 	MaxRequests uint64
 	Period      time.Duration
 }
 
-// IsValid checks if the given Limit is valid. A Limit can either be
-// "unlimited" or have a max requests and period defined. Therefore, it is
-// considered invalid if Unlimited is true and has a non-zero MaxRequests
-// and/or Period. Likewise, it is invalid if it has a zero MaxRequests and/or
-// Period and Unlimited is false. Finally, the Limit must have a valid
-// LimitPer.
-func (l *Limit) IsValid() bool {
-	if !(l.Per.IsValid()) {
-		return false
-	}
+func (l *Limited) GetResource() string { return l.Resource }
+func (l *Limited) GetAction() string   { return l.Action }
+func (l *Limited) GetPer() LimitPer    { return l.Per }
 
+// validate checks if l is valid. Limited is invalid if Per is invalid or if
+// MaxRequests is zero or if Period is less than or equal to zero.
+func (l *Limited) validate() error {
 	switch {
-	case l.Unlimited && (l.MaxRequests != 0 || l.Period != 0):
-		return false
-	case !l.Unlimited && (l.MaxRequests == 0 || l.Period <= 0):
-		return false
+	case !l.Per.IsValid():
+		return ErrInvalidLimitPer
+	case l.MaxRequests == 0:
+		return fmt.Errorf("%w: max requests must be greater than zero", ErrInvalidLimit)
+	case l.Period <= 0:
+		return fmt.Errorf("%w: period must be greater than zero", ErrInvalidLimit)
 	}
 
-	return true
+	return nil
+}
+
+// Unlimited is a Limit that allows an unlimited number of requests.
+type Unlimited struct {
+	Action   string
+	Resource string
+	Per      LimitPer
+}
+
+func (u *Unlimited) GetResource() string { return u.Resource }
+func (u *Unlimited) GetAction() string   { return u.Action }
+func (u *Unlimited) GetPer() LimitPer    { return u.Per }
+
+// validate checks if u is valid. It is invalid if Per is invalid.
+func (u *Unlimited) validate() error {
+	switch {
+	case !u.Per.IsValid():
+		return ErrInvalidLimitPer
+	}
+	return nil
 }

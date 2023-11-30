@@ -109,11 +109,10 @@ func Test_storeCapacity(t *testing.T) {
 	s, err := newExpirableStore(maxSize, time.Minute)
 	require.NoError(t, err)
 
-	limit := &Limit{
+	limit := &Limited{
 		Resource:    "resource",
 		Action:      "action",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 10,
 		Period:      time.Minute,
 	}
@@ -134,20 +133,18 @@ func Test_storeDeleteExpired(t *testing.T) {
 	s, err := newExpirableStore(20, maxPeriod, WithNumberBuckets(numberBuckets))
 	require.NoError(t, err)
 
-	short := &Limit{
+	short := &Limited{
 		Resource:    "resource",
 		Action:      "short",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 10,
 		Period:      maxPeriod / time.Duration(numberBuckets),
 	}
 
-	long := &Limit{
+	long := &Limited{
 		Resource:    "resource",
 		Action:      "long",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 10,
 		Period:      maxPeriod,
 	}
@@ -186,11 +183,10 @@ func Test_ResetBucketSize(t *testing.T) {
 	s, err := newExpirableStore(20, maxPeriod, WithNumberBuckets(numberBuckets))
 	require.NoError(t, err)
 
-	limit := &Limit{
+	limit := &Limited{
 		Resource:    "resource",
 		Action:      "action",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 10,
 		Period:      maxPeriod,
 	}
@@ -238,11 +234,10 @@ func Test_storeFetchExpired(t *testing.T) {
 	s, err := newExpirableStore(20, maxPeriod, WithNumberBuckets(numberBuckets))
 	require.NoError(t, err)
 
-	limit := &Limit{
+	limit := &Limited{
 		Resource:    "resource",
 		Action:      "short",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 10,
 		Period:      time.Millisecond,
 	}

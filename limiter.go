@@ -13,7 +13,7 @@ import (
 type quotaFetcher interface {
 	// fetch will get a Quota for the provided key.
 	// If no quota is found, a new one will be created using the provided Limit.
-	fetch(key string, limit *Limit) (*Quota, error)
+	fetch(key string, limit *Limited) (*Quota, error)
 	// shutdown stops a quotaFetcher.
 	shutdown() error
 }
@@ -57,7 +57,7 @@ type Limiter struct {
 //   - WithQuotaStorageUsageMetric: Provides a gauge metric to report the
 //     current number of Quotas that are being stored by the Limiter. The
 //     default is to not report this metric.
-func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
+func NewLimiter(limits []Limit, maxSize int, o ...Option) (*Limiter, error) {
 	const op = "rate.NewLimiter"
 
 	switch {
@@ -69,27 +69,28 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 
 	policies := make(map[string]*limitPolicy, len(limits)/3)
 
-	var policy *limitPolicy
-	var ok bool
 	var maxEntryTTL time.Duration
 	for _, l := range limits {
 
-		if !l.IsValid() {
-			return nil, fmt.Errorf("%s: %w", op, ErrInvalidLimit)
+		if err := l.validate(); err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
 		}
-		polKey := getKey(l.Resource, l.Action)
+		polKey := getKey(l.GetResource(), l.GetAction())
 
-		policy, ok = policies[polKey]
+		policy, ok := policies[polKey]
 		if !ok {
-			policy = newLimitPolicy(l.Resource, l.Action)
+			policy = newLimitPolicy(l.GetResource(), l.GetAction())
 			policies[polKey] = policy
 		}
 		if err := policy.add(l); err != nil {
 			return nil, err
 		}
 
-		if l.Period > maxEntryTTL {
-			maxEntryTTL = l.Period
+		switch ll := l.(type) {
+		case *Limited:
+			if ll.Period > maxEntryTTL {
+				maxEntryTTL = ll.Period
+			}
 		}
 	}
 
@@ -99,9 +100,6 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 		}
 	}
 
-	// TODO: handle special case where all of the provided limits have Unlimited = true.
-	// If this is the case, we can skip the creation of a quotaFetcher
-
 	s, err := newExpirableStore(maxSize, maxEntryTTL, o...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -109,9 +107,9 @@ func NewLimiter(limits []*Limit, maxSize int, o ...Option) (*Limiter, error) {
 
 	l := &Limiter{
 		policies:     policies,
+		quotaFetcher: s,
 		policyHeader: opts.withPolicyHeader,
 		usageHeader:  opts.withUsageHeader,
-		quotaFetcher: s,
 	}
 
 	return l, nil
@@ -172,15 +170,11 @@ func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, q
 		LimitPerAuthToken: authToken,
 	}
 
-	var ok bool
-	var limit *Limit
-	var policy *limitPolicy
-	var q *Quota
-	var key string
 	allowed = true
 	for per, id := range keys {
-		key = getKey(resource, action)
-		policy, ok = l.policies[key]
+		var limit Limit
+		key := getKey(resource, action)
+		policy, ok := l.policies[key]
 		if !ok {
 			allowed = false
 			err = ErrLimitPolicyNotFound
@@ -222,5 +216,8 @@ func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, q
 // Shutdown stops a Limiter. After calling this, any future calls to Allow
 // will result in ErrStopped being returned.
 func (l *Limiter) Shutdown() error {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
 	return l.quotaFetcher.shutdown()
 }

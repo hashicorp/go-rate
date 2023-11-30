@@ -44,7 +44,6 @@ issues:
   max-same-issues: 0
   include:
     # Comments are important, these shouldn't be exlucded by default
-    - EXC0012
     - EXC0013
     - EXC0014
     - EXC0015

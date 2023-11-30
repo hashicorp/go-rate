@@ -11,14 +11,14 @@ import (
 // Quota tracks the remaining number of requests that can be made within a time
 // period.
 type Quota struct {
-	limit     *Limit
+	limit     *Limited
 	used      uint64
 	expiresAt time.Time
 
 	mu sync.RWMutex
 }
 
-func (q *Quota) reset(l *Limit) {
+func (q *Quota) reset(l *Limited) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 

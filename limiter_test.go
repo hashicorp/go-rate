@@ -17,7 +17,7 @@ func TestNewLimiter(t *testing.T) {
 	cases := []struct {
 		name           string
 		maxSize        int
-		limits         []*Limit
+		limits         []Limit
 		options        []Option
 		expectErr      error
 		expectPolicies map[string]*limitPolicy
@@ -25,28 +25,25 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"ValidPolicy",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -57,28 +54,25 @@ func TestNewLimiter(t *testing.T) {
 				"resource:action": {
 					resource: "resource",
 					action:   "action",
-					m: map[LimitPer]*Limit{
-						LimitPerTotal: {
+					m: map[LimitPer]Limit{
+						LimitPerTotal: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerTotal,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
-						LimitPerIPAddress: {
+						LimitPerIPAddress: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerIPAddress,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
-						LimitPerAuthToken: {
+						LimitPerAuthToken: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
@@ -90,52 +84,46 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"MultiplePolicies",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource1",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource1",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource1",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -146,28 +134,25 @@ func TestNewLimiter(t *testing.T) {
 				"resource1:action": {
 					resource: "resource1",
 					action:   "action",
-					m: map[LimitPer]*Limit{
-						LimitPerTotal: {
+					m: map[LimitPer]Limit{
+						LimitPerTotal: &Limited{
 							Resource:    "resource1",
 							Action:      "action",
 							Per:         LimitPerTotal,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
-						LimitPerIPAddress: {
+						LimitPerIPAddress: &Limited{
 							Resource:    "resource1",
 							Action:      "action",
 							Per:         LimitPerIPAddress,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
-						LimitPerAuthToken: {
+						LimitPerAuthToken: &Limited{
 							Resource:    "resource1",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
@@ -177,28 +162,25 @@ func TestNewLimiter(t *testing.T) {
 				"resource2:action": {
 					resource: "resource2",
 					action:   "action",
-					m: map[LimitPer]*Limit{
-						LimitPerTotal: {
+					m: map[LimitPer]Limit{
+						LimitPerTotal: &Limited{
 							Resource:    "resource2",
 							Action:      "action",
 							Per:         LimitPerTotal,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
-						LimitPerIPAddress: {
+						LimitPerIPAddress: &Limited{
 							Resource:    "resource2",
 							Action:      "action",
 							Per:         LimitPerIPAddress,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
-						LimitPerAuthToken: {
+						LimitPerAuthToken: &Limited{
 							Resource:    "resource2",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 100,
 							Period:      time.Minute,
 						},
@@ -210,12 +192,11 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"OneLimit",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -227,20 +208,18 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"MultipleLimits",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "res2",
 					Action:      "action2",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Second,
 				},
-				{
+				&Limited{
 					Resource:    "res1",
 					Action:      "action1",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -252,20 +231,18 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"DuplicateLimits",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Second,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 10,
 					Period:      time.Minute,
 				},
@@ -277,13 +254,12 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"InvalidLimit",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   true,
-					MaxRequests: 100,
+					MaxRequests: 0,
 					Period:      time.Minute,
 				},
 			},
@@ -294,7 +270,7 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"NoLimits",
 			10,
-			[]*Limit{},
+			[]Limit{},
 			[]Option{},
 			ErrEmptyLimits,
 			nil,
@@ -302,28 +278,25 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"InvalidMaxSize",
 			0,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -335,28 +308,25 @@ func TestNewLimiter(t *testing.T) {
 		{
 			"InvalidNumberBuckets",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -397,35 +367,32 @@ func TestLimiterAllow(t *testing.T) {
 	cases := []struct {
 		name    string
 		maxSize int
-		limits  []*Limit
+		limits  []Limit
 		options []Option
 		reqs    []allowTestRequest
 	}{
 		{
 			"OneRequest",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 25,
 					Period:      time.Minute,
 				},
@@ -438,11 +405,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 25,
 							Period:      time.Minute,
 						},
@@ -454,28 +420,25 @@ func TestLimiterAllow(t *testing.T) {
 		{
 			"MissingLimitPolicy",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 25,
 					Period:      time.Minute,
 				},
@@ -494,28 +457,25 @@ func TestLimiterAllow(t *testing.T) {
 		{
 			"ConsumeQuota",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 2,
 					Period:      time.Minute,
 				},
@@ -528,11 +488,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 2,
 							Period:      time.Minute,
 						},
@@ -545,11 +504,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 2,
 							Period:      time.Minute,
 						},
@@ -563,11 +521,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: false,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 2,
 							Period:      time.Minute,
 						},
@@ -579,76 +536,67 @@ func TestLimiterAllow(t *testing.T) {
 		{
 			"ReachedCapacity",
 			6,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource1",
 					Action:      "action1",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action2",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource3",
 					Action:      "action3",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource1",
 					Action:      "action1",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action2",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource3",
 					Action:      "action3",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource1",
 					Action:      "action1",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 25,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action2",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 1,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource3",
 					Action:      "action3",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 2,
 					Period:      time.Minute,
 				},
@@ -661,11 +609,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource1",
 							Action:      "action1",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 25,
 							Period:      time.Minute,
 						},
@@ -678,11 +625,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource2",
 							Action:      "action2",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -706,11 +652,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource1",
 							Action:      "action1",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 25,
 							Period:      time.Minute,
 						},
@@ -723,11 +668,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: false,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource2",
 							Action:      "action2",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -739,28 +683,25 @@ func TestLimiterAllow(t *testing.T) {
 		{
 			"MultipleIPAddress",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 3,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 2,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 1,
 					Period:      time.Minute,
 				},
@@ -775,11 +716,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -794,11 +734,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -813,11 +752,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerTotal,
-							Unlimited:   false,
 							MaxRequests: 3,
 							Period:      time.Minute,
 						},
@@ -832,11 +770,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: false,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerTotal,
-							Unlimited:   false,
 							MaxRequests: 3,
 							Period:      time.Minute,
 						},
@@ -848,28 +785,25 @@ func TestLimiterAllow(t *testing.T) {
 		{
 			"MultipleAuthTokens",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 2,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 1,
 					Period:      time.Minute,
 				},
@@ -883,11 +817,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -901,11 +834,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerIPAddress,
-							Unlimited:   false,
 							MaxRequests: 2,
 							Period:      time.Minute,
 						},
@@ -919,11 +851,10 @@ func TestLimiterAllow(t *testing.T) {
 					expectAllowed: false,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerIPAddress,
-							Unlimited:   false,
 							MaxRequests: 2,
 							Period:      time.Minute,
 						},
@@ -955,9 +886,17 @@ func TestLimiterAllow(t *testing.T) {
 
 				require.NoError(t, err)
 				assert.Equal(t, r.expectAllowed, allowed)
-				assert.Equal(t, r.expectQuota.limit, q.limit)
-				assert.Equal(t, r.expectQuota.used, q.used)
-				assert.Equal(t, r.expectQuota.Remaining(), q.Remaining())
+				if r.expectQuota == nil {
+					assert.Nil(t, q)
+				} else {
+					require.NotNil(t, r.expectQuota)
+					require.NotNil(t, q)
+					require.NotNil(t, r.expectQuota.limit)
+					require.NotNil(t, q.limit)
+					assert.Equal(t, r.expectQuota.limit, q.limit)
+					assert.Equal(t, r.expectQuota.used, q.used)
+					assert.Equal(t, r.expectQuota.Remaining(), q.Remaining())
+				}
 			}
 		})
 	}
@@ -968,7 +907,7 @@ func TestSetPolicyHeader(t *testing.T) {
 	cases := []struct {
 		name              string
 		maxSize           int
-		limits            []*Limit
+		limits            []Limit
 		options           []Option
 		resource          string
 		action            string
@@ -979,28 +918,25 @@ func TestSetPolicyHeader(t *testing.T) {
 		{
 			"ValidPolicy",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -1015,28 +951,25 @@ func TestSetPolicyHeader(t *testing.T) {
 		{
 			"ValidPolicyAlternateHeader",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -1051,28 +984,25 @@ func TestSetPolicyHeader(t *testing.T) {
 		{
 			"PolicyNotFound",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -1087,46 +1017,40 @@ func TestSetPolicyHeader(t *testing.T) {
 		{
 			"Unlimited",
 			10,
-			[]*Limit{
-				{
-					Resource:  "resource",
-					Action:    "action",
-					Per:       LimitPerTotal,
-					Unlimited: true,
+			[]Limit{
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerTotal,
 				},
-				{
-					Resource:  "resource",
-					Action:    "action",
-					Per:       LimitPerIPAddress,
-					Unlimited: true,
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerIPAddress,
 				},
-				{
-					Resource:  "resource",
-					Action:    "action",
-					Per:       LimitPerAuthToken,
-					Unlimited: true,
+				&Unlimited{
+					Resource: "resource",
+					Action:   "action",
+					Per:      LimitPerAuthToken,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource2",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
@@ -1172,11 +1096,10 @@ func TestSetUsageHeader(t *testing.T) {
 			"ValidPolicy",
 			[]Option{},
 			&Quota{
-				limit: &Limit{
+				limit: &Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
@@ -1191,11 +1114,10 @@ func TestSetUsageHeader(t *testing.T) {
 			"ValidPolicyAlternateHeader",
 			[]Option{WithUsageHeader("Usage-Header")},
 			&Quota{
-				limit: &Limit{
+				limit: &Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
@@ -1219,28 +1141,25 @@ func TestSetUsageHeader(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			l, err := NewLimiter(
-				[]*Limit{
-					{
+				[]Limit{
+					&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         LimitPerTotal,
-						Unlimited:   false,
 						MaxRequests: 100,
 						Period:      time.Minute,
 					},
-					{
+					&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         LimitPerIPAddress,
-						Unlimited:   false,
 						MaxRequests: 100,
 						Period:      time.Minute,
 					},
-					{
+					&Limited{
 						Resource:    "resource",
 						Action:      "action",
 						Per:         LimitPerAuthToken,
-						Unlimited:   false,
 						MaxRequests: 100,
 						Period:      time.Minute,
 					},
@@ -1262,34 +1181,31 @@ func TestLimiterQuotaCapacityMetric(t *testing.T) {
 	cases := []struct {
 		name    string
 		maxSize int
-		limits  []*Limit
+		limits  []Limit
 		gauge   *testGauge
 	}{
 		{
 			"NewGauge",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 25,
 					Period:      time.Minute,
 				},
@@ -1299,28 +1215,25 @@ func TestLimiterQuotaCapacityMetric(t *testing.T) {
 		{
 			"ExistingGauge",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 25,
 					Period:      time.Minute,
 				},
@@ -1344,7 +1257,7 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 	cases := []struct {
 		name        string
 		maxSize     int
-		limits      []*Limit
+		limits      []Limit
 		gauge       *testGauge
 		reqs        []allowTestRequest
 		expectUsage float64
@@ -1352,28 +1265,25 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 		{
 			"OneRequest",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 50,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 25,
 					Period:      time.Minute,
 				},
@@ -1386,11 +1296,10 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 25,
 							Period:      time.Minute,
 						},
@@ -1403,28 +1312,25 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 		{
 			"MultipleIPAddress",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 3,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 2,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 1,
 					Period:      time.Minute,
 				},
@@ -1439,11 +1345,10 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -1458,11 +1363,10 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -1477,11 +1381,10 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerTotal,
-							Unlimited:   false,
 							MaxRequests: 3,
 							Period:      time.Minute,
 						},
@@ -1494,28 +1397,25 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 		{
 			"MultipleAuthTokens",
 			10,
-			[]*Limit{
-				{
+			[]Limit{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
-					Unlimited:   false,
 					MaxRequests: 100,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerIPAddress,
-					Unlimited:   false,
 					MaxRequests: 2,
 					Period:      time.Minute,
 				},
-				{
+				&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerAuthToken,
-					Unlimited:   false,
 					MaxRequests: 1,
 					Period:      time.Minute,
 				},
@@ -1529,11 +1429,10 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerAuthToken,
-							Unlimited:   false,
 							MaxRequests: 1,
 							Period:      time.Minute,
 						},
@@ -1547,11 +1446,10 @@ func TestLimiterQuotaUsageMetric(t *testing.T) {
 					expectAllowed: true,
 					expectErr:     nil,
 					expectQuota: &Quota{
-						limit: &Limit{
+						limit: &Limited{
 							Resource:    "resource",
 							Action:      "action",
 							Per:         LimitPerIPAddress,
-							Unlimited:   false,
 							MaxRequests: 2,
 							Period:      time.Minute,
 						},

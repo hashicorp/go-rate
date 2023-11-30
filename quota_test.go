@@ -18,11 +18,10 @@ func TestQuota_reset(t *testing.T) {
 	require.Equal(t, uint64(0), q.used)
 	require.True(t, q.Expiration().IsZero())
 
-	l := &Limit{
+	l := &Limited{
 		Resource:    "resource",
 		Action:      "action",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 10,
 		Period:      time.Minute,
 	}
@@ -32,11 +31,10 @@ func TestQuota_reset(t *testing.T) {
 	assert.Equal(t, uint64(10), q.MaxRequests())
 	q.used = 5
 
-	l2 := &Limit{
+	l2 := &Limited{
 		Resource:    "resource",
 		Action:      "action",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 50,
 		Period:      time.Minute * 10,
 	}
@@ -47,11 +45,10 @@ func TestQuota_reset(t *testing.T) {
 }
 
 func TestQuotaConsume(t *testing.T) {
-	l := &Limit{
+	l := &Limited{
 		Resource:    "resource",
 		Action:      "action",
 		Per:         LimitPerTotal,
-		Unlimited:   false,
 		MaxRequests: 10,
 		Period:      time.Minute,
 	}
@@ -86,11 +83,10 @@ func TestQuotaExpired(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := &Limit{
+			l := &Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: 10,
 				Period:      tc.period,
 			}
@@ -150,11 +146,10 @@ func TestQuotaRemaining(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := &Limit{
+			l := &Limited{
 				Resource:    "resource",
 				Action:      "action",
 				Per:         LimitPerTotal,
-				Unlimited:   false,
 				MaxRequests: tc.maxRequests,
 				Period:      time.Minute,
 			}

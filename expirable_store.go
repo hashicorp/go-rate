@@ -128,7 +128,7 @@ func (s *expirableStore) deleteExpired() {
 }
 
 // TODO: document this
-func (s *expirableStore) fetch(id string, limit *Limit) (*Quota, error) {
+func (s *expirableStore) fetch(id string, limit *Limited) (*Quota, error) {
 	select {
 	case <-s.ctx.Done():
 		return nil, ErrStopped
