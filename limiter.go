@@ -64,7 +64,7 @@ func NewLimiter(limits []Limit, maxSize int, o ...Option) (*Limiter, error) {
 	case len(limits) <= 0:
 		return nil, fmt.Errorf("%s: %w", op, ErrEmptyLimits)
 	case allUnlimited(limits):
-		return nil, fmt.Errorf("%s: %w", op, ErrUnlimited)
+		return nil, fmt.Errorf("%s: %w", op, ErrAllUnlimited)
 	}
 
 	opts := getOpts(o...)

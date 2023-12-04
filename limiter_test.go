@@ -296,7 +296,7 @@ func TestNewLimiter(t *testing.T) {
 				},
 			},
 			[]Option{},
-			ErrUnlimited,
+			ErrAllUnlimited,
 			nil,
 		},
 		{
