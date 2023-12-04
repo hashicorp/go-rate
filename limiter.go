@@ -77,7 +77,7 @@ func NewLimiter(limits []Limit, maxSize int, o ...Option) (*Limiter, error) {
 		if err := l.validate(); err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
-		polKey := getKey(l.GetResource(), l.GetAction())
+		polKey := join(l.GetResource(), l.GetAction())
 
 		policy, ok := policies[polKey]
 		if !ok {
@@ -120,7 +120,7 @@ func NewLimiter(limits []Limit, maxSize int, o ...Option) (*Limiter, error) {
 // SetPolicyHeader sets the rate limit policy HTTP header for the provided
 // resource and action.
 func (l *Limiter) SetPolicyHeader(resource, action string, header http.Header) error {
-	polKey := getKey(resource, action)
+	polKey := join(resource, action)
 	pol, ok := l.policies[polKey]
 	if !ok {
 		return ErrLimitPolicyNotFound
@@ -178,7 +178,7 @@ func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, q
 	allowed = true
 	for per, id := range keys {
 		var limit Limit
-		key := getKey(resource, action)
+		key := join(resource, action)
 		policy, ok := l.policies[key]
 		if !ok {
 			allowed = false

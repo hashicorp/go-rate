@@ -139,7 +139,7 @@ func (s *expirableStore) fetch(id string, limit *Limited) (*Quota, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	key := getKey(limit.Resource, limit.Action, string(limit.Per), id)
+	key := join(limit.Resource, limit.Action, string(limit.Per), id)
 
 	e, ok := s.items[key]
 	switch {

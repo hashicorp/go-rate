@@ -14,7 +14,7 @@ type builder struct {
 	bytes.Buffer
 }
 
-func getKey(parts ...string) string {
+func join(parts ...string) string {
 	var b *builder
 	if v := keyBuilderPool.Get(); v != nil {
 		b = v.(*builder)

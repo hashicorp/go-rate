@@ -38,7 +38,7 @@ func Test_getKey(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.want, func(t *testing.T) {
-			got := getKey(tc.parts...)
+			got := join(tc.parts...)
 			assert.Equal(t, tc.want, got)
 		})
 	}
