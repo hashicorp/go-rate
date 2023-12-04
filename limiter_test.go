@@ -20,7 +20,7 @@ func TestNewLimiter(t *testing.T) {
 		limits         []Limit
 		options        []Option
 		expectErr      error
-		expectPolicies map[string]*limitPolicy
+		expectPolicies *limitPolicies
 	}{
 		{
 			"ValidPolicy",
@@ -50,35 +50,38 @@ func TestNewLimiter(t *testing.T) {
 			},
 			[]Option{},
 			nil,
-			map[string]*limitPolicy{
-				"resource:action": {
-					resource: "resource",
-					action:   "action",
-					m: map[LimitPer]Limit{
-						LimitPerTotal: &Limited{
-							Resource:    "resource",
-							Action:      "action",
-							Per:         LimitPerTotal,
-							MaxRequests: 100,
-							Period:      time.Minute,
+			&limitPolicies{
+				m: map[string]*limitPolicy{
+					"resource:action": {
+						resource: "resource",
+						action:   "action",
+						m: map[LimitPer]Limit{
+							LimitPerTotal: &Limited{
+								Resource:    "resource",
+								Action:      "action",
+								Per:         LimitPerTotal,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
+							LimitPerIPAddress: &Limited{
+								Resource:    "resource",
+								Action:      "action",
+								Per:         LimitPerIPAddress,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
+							LimitPerAuthToken: &Limited{
+								Resource:    "resource",
+								Action:      "action",
+								Per:         LimitPerAuthToken,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
 						},
-						LimitPerIPAddress: &Limited{
-							Resource:    "resource",
-							Action:      "action",
-							Per:         LimitPerIPAddress,
-							MaxRequests: 100,
-							Period:      time.Minute,
-						},
-						LimitPerAuthToken: &Limited{
-							Resource:    "resource",
-							Action:      "action",
-							Per:         LimitPerAuthToken,
-							MaxRequests: 100,
-							Period:      time.Minute,
-						},
+						policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
 					},
-					policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
 				},
+				maxPeriod: time.Minute,
 			},
 		},
 		{
@@ -130,63 +133,66 @@ func TestNewLimiter(t *testing.T) {
 			},
 			[]Option{},
 			nil,
-			map[string]*limitPolicy{
-				"resource1:action": {
-					resource: "resource1",
-					action:   "action",
-					m: map[LimitPer]Limit{
-						LimitPerTotal: &Limited{
-							Resource:    "resource1",
-							Action:      "action",
-							Per:         LimitPerTotal,
-							MaxRequests: 100,
-							Period:      time.Minute,
+			&limitPolicies{
+				m: map[string]*limitPolicy{
+					"resource1:action": {
+						resource: "resource1",
+						action:   "action",
+						m: map[LimitPer]Limit{
+							LimitPerTotal: &Limited{
+								Resource:    "resource1",
+								Action:      "action",
+								Per:         LimitPerTotal,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
+							LimitPerIPAddress: &Limited{
+								Resource:    "resource1",
+								Action:      "action",
+								Per:         LimitPerIPAddress,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
+							LimitPerAuthToken: &Limited{
+								Resource:    "resource1",
+								Action:      "action",
+								Per:         LimitPerAuthToken,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
 						},
-						LimitPerIPAddress: &Limited{
-							Resource:    "resource1",
-							Action:      "action",
-							Per:         LimitPerIPAddress,
-							MaxRequests: 100,
-							Period:      time.Minute,
-						},
-						LimitPerAuthToken: &Limited{
-							Resource:    "resource1",
-							Action:      "action",
-							Per:         LimitPerAuthToken,
-							MaxRequests: 100,
-							Period:      time.Minute,
-						},
+						policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
 					},
-					policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
-				},
-				"resource2:action": {
-					resource: "resource2",
-					action:   "action",
-					m: map[LimitPer]Limit{
-						LimitPerTotal: &Limited{
-							Resource:    "resource2",
-							Action:      "action",
-							Per:         LimitPerTotal,
-							MaxRequests: 100,
-							Period:      time.Minute,
+					"resource2:action": {
+						resource: "resource2",
+						action:   "action",
+						m: map[LimitPer]Limit{
+							LimitPerTotal: &Limited{
+								Resource:    "resource2",
+								Action:      "action",
+								Per:         LimitPerTotal,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
+							LimitPerIPAddress: &Limited{
+								Resource:    "resource2",
+								Action:      "action",
+								Per:         LimitPerIPAddress,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
+							LimitPerAuthToken: &Limited{
+								Resource:    "resource2",
+								Action:      "action",
+								Per:         LimitPerAuthToken,
+								MaxRequests: 100,
+								Period:      time.Minute,
+							},
 						},
-						LimitPerIPAddress: &Limited{
-							Resource:    "resource2",
-							Action:      "action",
-							Per:         LimitPerIPAddress,
-							MaxRequests: 100,
-							Period:      time.Minute,
-						},
-						LimitPerAuthToken: &Limited{
-							Resource:    "resource2",
-							Action:      "action",
-							Per:         LimitPerAuthToken,
-							MaxRequests: 100,
-							Period:      time.Minute,
-						},
+						policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
 					},
-					policy: `100;w=60;comment="total", 100;w=60;comment="ip-address", 100;w=60;comment="auth-token"`,
 				},
+				maxPeriod: time.Minute,
 			},
 		},
 		{

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
-	"time"
 )
 
 type quotaFetcher interface {
@@ -22,7 +21,7 @@ type quotaFetcher interface {
 // should be allowed.
 // TODO: expand this doc
 type Limiter struct {
-	policies     map[string]*limitPolicy
+	policies     *limitPolicies
 	policyHeader string
 	usageHeader  string
 
@@ -69,40 +68,12 @@ func NewLimiter(limits []Limit, maxSize int, o ...Option) (*Limiter, error) {
 
 	opts := getOpts(o...)
 
-	policies := make(map[string]*limitPolicy, len(limits)/3)
-
-	var maxEntryTTL time.Duration
-	for _, l := range limits {
-
-		if err := l.validate(); err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
-		}
-		polKey := join(l.GetResource(), l.GetAction())
-
-		policy, ok := policies[polKey]
-		if !ok {
-			policy = newLimitPolicy(l.GetResource(), l.GetAction())
-			policies[polKey] = policy
-		}
-		if err := policy.add(l); err != nil {
-			return nil, err
-		}
-
-		switch ll := l.(type) {
-		case *Limited:
-			if ll.Period > maxEntryTTL {
-				maxEntryTTL = ll.Period
-			}
-		}
+	policies, err := newLimitPolicies(limits)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	for _, p := range policies {
-		if err := p.validate(); err != nil {
-			return nil, err
-		}
-	}
-
-	s, err := newExpirableStore(maxSize, maxEntryTTL, o...)
+	s, err := newExpirableStore(maxSize, policies.maxPeriod, o...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -120,10 +91,9 @@ func NewLimiter(limits []Limit, maxSize int, o ...Option) (*Limiter, error) {
 // SetPolicyHeader sets the rate limit policy HTTP header for the provided
 // resource and action.
 func (l *Limiter) SetPolicyHeader(resource, action string, header http.Header) error {
-	polKey := join(resource, action)
-	pol, ok := l.policies[polKey]
-	if !ok {
-		return ErrLimitPolicyNotFound
+	pol, err := l.policies.get(resource, action)
+	if err != nil {
+		return err
 	}
 	p := pol.httpHeaderValue()
 	if p == "" {
@@ -178,11 +148,10 @@ func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, q
 	allowed = true
 	for per, id := range keys {
 		var limit Limit
-		key := join(resource, action)
-		policy, ok := l.policies[key]
-		if !ok {
+		var policy *limitPolicy
+		policy, err = l.policies.get(resource, action)
+		if err != nil {
 			allowed = false
-			err = ErrLimitPolicyNotFound
 			return
 		}
 

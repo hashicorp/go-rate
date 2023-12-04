@@ -6,6 +6,7 @@ package rate
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // limitPolicy is a collection of Limits for the same resource and action. A limitPolicy
@@ -98,4 +99,63 @@ func (p *limitPolicy) validate() error {
 		}
 	}
 	return nil
+}
+
+func limitPolicyKey(resource, action string) string {
+	return join(resource, action)
+}
+
+type limitPolicies struct {
+	m map[string]*limitPolicy
+
+	maxPeriod time.Duration
+}
+
+func newLimitPolicies(limits []Limit) (*limitPolicies, error) {
+	policies := make(map[string]*limitPolicy, len(limits)/3)
+
+	var maxPeriod time.Duration
+	for _, l := range limits {
+
+		if err := l.validate(); err != nil {
+			return nil, err
+		}
+		polKey := limitPolicyKey(l.GetResource(), l.GetAction())
+
+		policy, ok := policies[polKey]
+		if !ok {
+			policy = newLimitPolicy(l.GetResource(), l.GetAction())
+			policies[polKey] = policy
+		}
+		if err := policy.add(l); err != nil {
+			return nil, err
+		}
+
+		switch ll := l.(type) {
+		case *Limited:
+			if ll.Period > maxPeriod {
+				maxPeriod = ll.Period
+			}
+		}
+	}
+
+	for _, p := range policies {
+		if err := p.validate(); err != nil {
+			return nil, err
+		}
+	}
+
+	return &limitPolicies{
+		m:         policies,
+		maxPeriod: maxPeriod,
+	}, nil
+}
+
+func (p *limitPolicies) get(resource, action string) (*limitPolicy, error) {
+	polKey := limitPolicyKey(resource, action)
+	pol, ok := p.m[polKey]
+	if !ok {
+		return nil, ErrLimitPolicyNotFound
+	}
+	return pol, nil
 }
