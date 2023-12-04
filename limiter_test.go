@@ -1234,7 +1234,7 @@ func TestSetUsageHeader(t *testing.T) {
 			},
 			nil,
 			DefaultUsageHeader,
-			`limit=50, remaining=40, reset=59`,
+			`limit=50, remaining=40, reset=60`,
 		},
 		{
 			"ValidPolicyAlternateHeader",
@@ -1252,7 +1252,7 @@ func TestSetUsageHeader(t *testing.T) {
 			},
 			nil,
 			"Usage-Header",
-			`limit=50, remaining=40, reset=59`,
+			`limit=50, remaining=40, reset=60`,
 		},
 		{
 			"NilQuota",

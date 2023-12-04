@@ -5,6 +5,7 @@ package rate
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"sync"
 )
@@ -113,7 +114,7 @@ func (l *Limiter) SetUsageHeader(quota *Quota, header http.Header) {
 
 	header.Set(
 		l.usageHeader,
-		fmt.Sprintf("limit=%d, remaining=%d, reset=%d", quota.MaxRequests(), quota.Remaining(), int64(quota.ResetsIn().Seconds())),
+		fmt.Sprintf("limit=%d, remaining=%d, reset=%.0f", quota.MaxRequests(), quota.Remaining(), math.Ceil(quota.ResetsIn().Seconds())),
 	)
 }
 
