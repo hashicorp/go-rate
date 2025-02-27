@@ -9,7 +9,7 @@ jobs:
   ci:
     strategy:
       matrix:
-        go: ["1.24.0"]
+        go: ["1.23"]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:
@@ -71,7 +71,7 @@ jobs:
       - name: Upload Coverage report
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
-          path: .coverage
+          path: coverage.out
           name: Coverage-report-${{matrix.go}}
       - name: Display coverage report
-        run: go tool cover -func=.coverage
+        run: go tool cover -func=coverage.out
