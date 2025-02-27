@@ -11,6 +11,10 @@ linters:
     - typecheck
 
 linters-settings:
+  exclude-rules:
+    - path: "/opt/hostedtoolcache/go/.*"
+      linters:
+        - typecheck
   revive:
     ignore-generated-header: true
     severity: warning

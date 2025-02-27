@@ -13,7 +13,7 @@ jobs:
   benchstat:
     strategy:
       matrix:
-        go: ["1.23"]
+        go: ["1.23.6"]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:

@@ -44,7 +44,7 @@ fmt:
 
 .PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run ./...
 
 .PHONY: gen
 gen: copywrite fmt
