@@ -32,7 +32,7 @@ func Benchmark_expirableStore(b *testing.B) {
 				var err error
 				benchStore, err = newExpirableStore(bc, time.Minute)
 				if err != nil {
-					b.Fatalf(err.Error())
+					b.Fatal(err)
 				}
 				benchStore.shutdown()
 			}

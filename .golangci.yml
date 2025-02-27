@@ -8,6 +8,8 @@ linters:
     - stylecheck
     - misspell
     - revive
+  disable:
+    - typecheck
 
 linters-settings:
   revive:

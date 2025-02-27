@@ -70,7 +70,7 @@ func BenchmarkAllow(b *testing.B) {
 		rIdx = i % numResources
 		_, _, err := l.Allow(resources[rIdx], action, "127.0.0.1", "token")
 		if err != nil {
-			b.Fatalf(err.Error())
+			b.Fatal(err)
 		}
 	}
 }
