@@ -11,7 +11,7 @@ type nopLimiter struct{}
 func (*nopLimiter) SetPolicyHeader(_, _ string, _ http.Header) error { return nil }
 
 // SetUsageHeader is a noop.
-func (*nopLimiter) SetUsageHeader(_ *Quota, _ http.Header) { return }
+func (*nopLimiter) SetUsageHeader(_ *Quota, _ http.Header) {}
 
 // Allow will always allow.
 func (*nopLimiter) Allow(_, _, _, _ string) (bool, *Quota, error) {

@@ -34,7 +34,9 @@ func Benchmark_expirableStore(b *testing.B) {
 				if err != nil {
 					b.Fatal(err)
 				}
-				benchStore.shutdown()
+				if err := benchStore.shutdown(); err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 	}
