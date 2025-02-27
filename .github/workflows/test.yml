@@ -59,9 +59,8 @@ jobs:
       - name: Bench
         run: |
           make bench
-      - name: Lint
-        run: |
-          make lint
+      -  name: Run golangci-lint
+         uses: golangci/golangci-lint-action@08e2f20817b15149a52b5b3ebe7de50aff2ba8c5
       - name: Gen diff
         run: |
           go mod tidy
