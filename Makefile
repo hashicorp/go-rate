@@ -7,7 +7,7 @@ all: test
 tools: golangci-lint
 	go install github.com/hashicorp/copywrite@v0.15.0
 	go install mvdan.cc/gofumpt@v0.3.1
-	go install golang.org/x/perf/cmd/benchstat@v0.0.0-20240115000000-4a5d6b7c8d9e
+	go install golang.org/x/perf/cmd/benchstat@latest
 
 # golangci-lint recommends installing the binary directly, instead of using go get
 # See the note: https://golangci-lint.run/usage/install/#install-from-source
