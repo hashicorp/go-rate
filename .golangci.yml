@@ -2,19 +2,14 @@
 # SPDX-License-Identifier: MPL-2.0
 
 linters:
+  disable-all: true
   enable:
     - staticcheck
     - stylecheck
     - misspell
     - revive
-  disable:
-    - typecheck
 
 linters-settings:
-  exclude-rules:
-    - path: "/opt/hostedtoolcache/go/.*"
-      linters:
-        - typecheck
   revive:
     ignore-generated-header: true
     severity: warning
