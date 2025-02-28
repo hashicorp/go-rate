@@ -23,7 +23,7 @@ func (*nopLimiter) Shutdown() error { return nil }
 
 // NopLimiter can be used in the place of a Limiter when no limits need to be
 // enforced, but a Limiter is expected.
-var NopLimiter *nopLimiter
+var NopLimiter = &nopLimiter{}
 
 type limiter interface {
 	SetPolicyHeader(string, string, http.Header) error

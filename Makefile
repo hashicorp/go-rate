@@ -44,7 +44,7 @@ fmt:
 
 .PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run --timeout=5m --skip-dirs=".*hostedtoolcache/go.*"
 
 .PHONY: gen
 gen: copywrite fmt
