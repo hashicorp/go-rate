@@ -11,14 +11,14 @@ import (
 var keyBuilderPool sync.Pool
 
 type builder struct {
-	bytes.Buffer
+	Buffer bytes.Buffer
 }
 
 func join(parts ...string) string {
 	var b *builder
 	if v := keyBuilderPool.Get(); v != nil {
 		b = v.(*builder)
-		b.Reset()
+		b.Buffer.Reset()
 	} else {
 		b = &builder{}
 	}
@@ -26,10 +26,10 @@ func join(parts ...string) string {
 
 	end := len(parts) - 1
 	for i, p := range parts {
-		b.WriteString(p)
+		b.Buffer.WriteString(p)
 		if i != end {
-			b.Write([]byte(":"))
+			b.Buffer.Write([]byte(":"))
 		}
 	}
-	return b.String()
+	return b.Buffer.String()
 }
