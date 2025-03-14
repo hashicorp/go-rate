@@ -2,8 +2,7 @@
 name: benchstat
 
 on:
-  push:
-    branches: [linting]
+  - pull_request
 
 permissions:
   contents: read

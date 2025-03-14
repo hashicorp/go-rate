@@ -2,8 +2,8 @@
 name: ci
 
 on:
-  push:
-    branches: [linting]
+  - push
+  - pull_request
 
 jobs:
   ci:
