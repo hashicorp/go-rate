@@ -2,7 +2,8 @@
 name: benchstat
 
 on:
-  - pull_request
+  push:
+    branches: [linting]
 
 permissions:
   contents: read
@@ -11,17 +12,17 @@ permissions:
 
 jobs:
   benchstat:
-    strategy:
-      matrix:
-        go: ["1.21"]
-        platform: [ubuntu-latest]
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     steps:
+      - name: Determine Go version
+        id: get-go-version
+        run: |
+          echo "Building with Go $(cat .go-version)"
+          echo "go-version=$(cat .go-version)" >> "$GITHUB_OUTPUT"
       - name: Setup Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
-          go-version: ${{ matrix.go }}
-          cache: false
+          go-version: "${{ steps.get-go-version.outputs.go-version }}"
       - name: Checkout out code
         uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
         with:
@@ -29,8 +30,8 @@ jobs:
       - name: Determine go cache key
         id: go-cache-key
         run: |
-          echo "key=${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum', './Makefile') }}" >> "$GITHUB_OUTPUT"
-          echo "restore-key=${{ runner.os }}-go-${{ matrix.go }}" >> "$GITHUB_OUTPUT"
+            echo "key=${{ runner.os }}-go-${{ hashFiles('**/go.sum', './Makefile') }}" >> "$GITHUB_OUTPUT"
+            echo "restore-key=${{ runner.os }}-go" >> "$GITHUB_OUTPUT"
       - name: Determine Go cache paths
         id: go-cache-paths
         run: |

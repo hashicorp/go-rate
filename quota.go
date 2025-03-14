@@ -60,7 +60,7 @@ func (q *Quota) MaxRequests() uint64 {
 func (q *Quota) ResetsIn() time.Duration {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
-	return q.expiresAt.Sub(time.Now())
+	return time.Until(q.expiresAt)
 }
 
 // Expiration returns the time that the quota will expire.

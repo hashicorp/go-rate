@@ -11,7 +11,7 @@ type nopLimiter struct{}
 func (*nopLimiter) SetPolicyHeader(_, _ string, _ http.Header) error { return nil }
 
 // SetUsageHeader is a noop.
-func (*nopLimiter) SetUsageHeader(_ *Quota, _ http.Header) { return }
+func (*nopLimiter) SetUsageHeader(_ *Quota, _ http.Header) {}
 
 // Allow will always allow.
 func (*nopLimiter) Allow(_, _, _, _ string) (bool, *Quota, error) {
@@ -23,7 +23,7 @@ func (*nopLimiter) Shutdown() error { return nil }
 
 // NopLimiter can be used in the place of a Limiter when no limits need to be
 // enforced, but a Limiter is expected.
-var NopLimiter *nopLimiter
+var NopLimiter = &nopLimiter{}
 
 type limiter interface {
 	SetPolicyHeader(string, string, http.Header) error
