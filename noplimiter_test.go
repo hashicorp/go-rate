@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hashicorp/go-rate"
+	rate "github.com/hashicorp/go-rate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

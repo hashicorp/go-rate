@@ -70,13 +70,15 @@ func TestLimitPolicy_add(t *testing.T) {
 			"DuplicateLimit",
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
-				lp.add(&Limited{
+				if err := lp.add(&Limited{
 					Resource:    "resource",
 					Action:      "action",
 					Per:         LimitPerTotal,
 					MaxRequests: 20,
 					Period:      time.Minute,
-				})
+				}); err != nil {
+					t.Fatal(err)
+				}
 				return lp
 			}(),
 			&Limited{
