@@ -53,6 +53,9 @@ jobs:
       - name: Test
         run: |
           make test
+      - name: Coverage report
+        run: |
+          make cover-html
       - name: Bench
         run: |
           make bench
@@ -66,3 +69,10 @@ jobs:
           git diff --exit-code
           git status --porcelain
           test -z "$(git status --porcelain)"
+      - name: Upload coverage report
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        with:
+          path: coverage.out
+          name: Coverage-report
+      - name: Display coverage report
+        run: go tool cover -func=coverage.out

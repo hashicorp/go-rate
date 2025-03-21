@@ -26,8 +26,8 @@ test:
 
 .PHONY: cover-html
 cover-html:
-	go test -race -v -cover -coverprofile=.coverage ./... && \
-		go tool cover -html=.coverage && \
+	go test -race -v -cover -coverprofile=.coverage.out ./... && \
+		go tool cover -html=.coverage.out && \
 		rm -f .coverage
 
 .PHONY: bench
