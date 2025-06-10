@@ -3,16 +3,31 @@
 
 version: 2
 updates:
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "sunday"
     commit-message:
       prefix: "[chore] : "
+    groups:
+      actions:
+        patterns:
+          - "*"
       
-  - package-ecosystem: gomod
-    directory: /
+  - package-ecosystem: "gomod"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "sunday"
     commit-message:
       prefix: "[chore] : "
+    groups:
+      go:
+        patterns:
+          - "*"
+        applies-to: "version-updates"
+      go-security:
+        patterns:
+          - "*"
+        applies-to: "security-updates"
