@@ -53,17 +53,17 @@ func (p *limitPolicy) add(l Limit) error {
 	}
 
 	switch {
-	case l.GetResource() != p.resource:
+	case l.getResource() != p.resource:
 		return fmt.Errorf("limit's resource does not match limit policy's: %w", ErrInvalidLimit)
-	case l.GetAction() != p.action:
+	case l.getAction() != p.action:
 		return fmt.Errorf("limit's action does not match limit policy's: %w", ErrInvalidLimit)
 	}
 
-	if _, ok := p.m[l.GetPer()]; ok {
+	if _, ok := p.m[l.getPer()]; ok {
 		return ErrDuplicateLimit
 	}
 
-	p.m[l.GetPer()] = l
+	p.m[l.getPer()] = l
 	p.buildStr()
 	return nil
 }
@@ -120,11 +120,11 @@ func newLimitPolicies(limits []Limit) (*limitPolicies, error) {
 		if err := l.validate(); err != nil {
 			return nil, err
 		}
-		polKey := limitPolicyKey(l.GetResource(), l.GetAction())
+		polKey := limitPolicyKey(l.getResource(), l.getAction())
 
 		policy, ok := policies[polKey]
 		if !ok {
-			policy = newLimitPolicy(l.GetResource(), l.GetAction())
+			policy = newLimitPolicy(l.getResource(), l.getAction())
 			policies[polKey] = policy
 		}
 		if err := policy.add(l); err != nil {

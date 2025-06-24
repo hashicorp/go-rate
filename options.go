@@ -77,8 +77,8 @@ func WithUsageHeader(h string) Option {
 // the total capacity available to the Limiter for storing Quotas.
 func WithQuotaStorageCapacityMetric(g metric.Gauge) Option {
 	return func(o *options) {
-		switch {
-		case g == nil:
+		switch g {
+		case nil:
 			o.withQuotaStorageUsageMetric = &nilGauge{}
 		default:
 			o.withQuotaStorageCapacityMetric = g
@@ -90,8 +90,8 @@ func WithQuotaStorageCapacityMetric(g metric.Gauge) Option {
 // current number of Quotas that are being stored by the Limiter.
 func WithQuotaStorageUsageMetric(g metric.Gauge) Option {
 	return func(o *options) {
-		switch {
-		case g == nil:
+		switch g {
+		case nil:
 			o.withQuotaStorageUsageMetric = &nilGauge{}
 		default:
 			o.withQuotaStorageUsageMetric = g

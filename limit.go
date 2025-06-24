@@ -38,11 +38,11 @@ const (
 // or in total. A Limit is either Limited or Unlimited.
 type Limit interface {
 	// GetResource returns the resource.
-	GetResource() string
+	getResource() string
 	// GetAction returns the action.
-	GetAction() string
+	getAction() string
 	// GetPer returns the LimitPer.
-	GetPer() LimitPer
+	getPer() LimitPer
 
 	validate() error
 }
@@ -58,9 +58,9 @@ type Limited struct {
 	Period      time.Duration
 }
 
-func (l *Limited) GetResource() string { return l.Resource }
-func (l *Limited) GetAction() string   { return l.Action }
-func (l *Limited) GetPer() LimitPer    { return l.Per }
+func (l *Limited) getResource() string { return l.Resource }
+func (l *Limited) getAction() string   { return l.Action }
+func (l *Limited) getPer() LimitPer    { return l.Per }
 
 // validate checks if l is valid. Limited is invalid if Per is invalid or if
 // MaxRequests is zero or if Period is less than or equal to zero.
@@ -84,9 +84,9 @@ type Unlimited struct {
 	Per      LimitPer
 }
 
-func (u *Unlimited) GetResource() string { return u.Resource }
-func (u *Unlimited) GetAction() string   { return u.Action }
-func (u *Unlimited) GetPer() LimitPer    { return u.Per }
+func (u *Unlimited) getResource() string { return u.Resource }
+func (u *Unlimited) getAction() string   { return u.Action }
+func (u *Unlimited) getPer() LimitPer    { return u.Per }
 
 // validate checks if u is valid. It is invalid if Per is invalid.
 func (u *Unlimited) validate() error {
