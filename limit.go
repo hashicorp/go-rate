@@ -58,9 +58,14 @@ type Limited struct {
 	Period      time.Duration
 }
 
+// GetResource returns the resource.
 func (l *Limited) GetResource() string { return l.Resource }
-func (l *Limited) GetAction() string   { return l.Action }
-func (l *Limited) GetPer() LimitPer    { return l.Per }
+
+// GetAction returns the action.
+func (l *Limited) GetAction() string { return l.Action }
+
+// GetPer returns the LimitPer.
+func (l *Limited) GetPer() LimitPer { return l.Per }
 
 // validate checks if l is valid. Limited is invalid if Per is invalid or if
 // MaxRequests is zero or if Period is less than or equal to zero.
@@ -84,9 +89,14 @@ type Unlimited struct {
 	Per      LimitPer
 }
 
+// GetResource returns the resource.
 func (u *Unlimited) GetResource() string { return u.Resource }
-func (u *Unlimited) GetAction() string   { return u.Action }
-func (u *Unlimited) GetPer() LimitPer    { return u.Per }
+
+// GetAction returns the action.
+func (u *Unlimited) GetAction() string { return u.Action }
+
+// GetPer returns the LimitPer.
+func (u *Unlimited) GetPer() LimitPer { return u.Per }
 
 // validate checks if u is valid. It is invalid if Per is invalid.
 func (u *Unlimited) validate() error {
