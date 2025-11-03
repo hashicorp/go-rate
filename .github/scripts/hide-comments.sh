@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) HashiCorp, Inc.
+# Copyright IBM Corp. 2023, 2025
 # SPDX-License-Identifier: MPL-2.0
 
 # This script finds all issue comments on a PR that match a specific prefix and
