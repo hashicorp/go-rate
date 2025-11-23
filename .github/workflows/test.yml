@@ -15,11 +15,11 @@ jobs:
           echo "Building with Go $(cat .go-version)"
           echo "go-version=$(cat .go-version)" >> "$GITHUB_OUTPUT"
       - name: Setup Go
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version: "${{ steps.get-go-version.outputs.go-version }}"
       - name: Checkout out code
-        uses: actions/checkout@71cf2267d89c5cb81562390fa70a37fa40b1305e
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
         with:
           fetch-depth: '0'
       - name: Determine go cache key
