@@ -468,6 +468,42 @@ func TestLimitPolicy_validate(t *testing.T) {
 			nil,
 		},
 		{
+			"TokenNoError",
+			func() *limitPolicy {
+				lp := newLimitPolicy("resource", "action")
+				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerToken} {
+					err := lp.add(&Limited{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         per,
+						MaxRequests: 10,
+						Period:      time.Minute,
+					})
+					require.NoError(t, err)
+				}
+				return lp
+			}(),
+			nil,
+		},
+		{
+			"TokenAndAuthTokenMutuallyExclusive",
+			func() *limitPolicy {
+				lp := newLimitPolicy("resource", "action")
+				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerToken, LimitPerAuthToken} {
+					err := lp.add(&Limited{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         per,
+						MaxRequests: 10,
+						Period:      time.Minute,
+					})
+					require.NoError(t, err)
+				}
+				return lp
+			}(),
+			ErrInvalidLimitPolicy,
+		},
+		{
 			"MissingResource",
 			&limitPolicy{
 				resource: "",

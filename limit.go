@@ -18,7 +18,7 @@ func (p LimitPer) String() string {
 // IsValid checks if the given LimitPer is valid.
 func (p LimitPer) IsValid() bool {
 	switch p {
-	case LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken:
+	case LimitPerTotal, LimitPerIPAddress, LimitPerToken, LimitPerAuthToken:
 		return true
 	}
 	return false
@@ -27,7 +27,11 @@ func (p LimitPer) IsValid() bool {
 const (
 	// LimitPerIPAddress indicates that the limit applies per IP address.
 	LimitPerIPAddress LimitPer = "ip-address"
+	// LimitPerToken indicates that the limit applies per token, which includes both app and auth tokens.
+	LimitPerToken LimitPer = "token"
 	// LimitPerAuthToken indicates that the limit applies per auth token.
+	//
+	// Deprecated: use LimitPerToken instead.
 	LimitPerAuthToken LimitPer = "auth-token"
 	// LimitPerTotal indicates that the limit applies for all IP address and all Auth Tokens.
 	LimitPerTotal LimitPer = "total"
