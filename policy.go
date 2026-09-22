@@ -20,7 +20,7 @@ type limitPolicy struct {
 	policy string
 }
 
-var requiredLimitPer = []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken}
+var requiredLimitPer = []LimitPer{LimitPerTotal, LimitPerIPAddress}
 
 func newLimitPolicy(resource, action string) *limitPolicy {
 	return &limitPolicy{
@@ -81,6 +81,16 @@ func (p *limitPolicy) buildStr() {
 		}
 
 	}
+	for _, per := range []LimitPer{LimitPerToken, LimitPerAuthToken} {
+		l, ok := p.m[per]
+		if !ok {
+			continue
+		}
+		switch ll := l.(type) {
+		case *Limited:
+			s = append(s, fmt.Sprintf("%d;w=%d;comment=%q", ll.MaxRequests, uint64(ll.Period.Seconds()), ll.Per.String()))
+		}
+	}
 
 	p.policy = strings.Join(s, ", ")
 }
@@ -97,6 +107,14 @@ func (p *limitPolicy) validate() error {
 				return fmt.Errorf("mising limit for %q: %w", per, ErrInvalidLimitPolicy)
 			}
 		}
+	}
+	_, hasToken := p.m[LimitPerToken]
+	_, hasAuthToken := p.m[LimitPerAuthToken]
+	switch {
+	case hasToken && hasAuthToken:
+		return fmt.Errorf("limit for %q and deprecated %q are mutually exclusive: %w", LimitPerToken, LimitPerAuthToken, ErrInvalidLimitPolicy)
+	case !hasToken && !hasAuthToken:
+		return fmt.Errorf("mising limit for %q: %w", LimitPerToken, ErrInvalidLimitPolicy)
 	}
 	return nil
 }
