@@ -448,6 +448,53 @@ func TestLimiterAllow(t *testing.T) {
 			},
 		},
 		{
+			"OneRequestPerToken",
+			10,
+			[]Limit{
+				&Limited{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerTotal,
+					MaxRequests: 100,
+					Period:      time.Minute,
+				},
+				&Limited{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerIPAddress,
+					MaxRequests: 50,
+					Period:      time.Minute,
+				},
+				&Limited{
+					Resource:    "resource",
+					Action:      "action",
+					Per:         LimitPerToken,
+					MaxRequests: 25,
+					Period:      time.Minute,
+				},
+			},
+			[]Option{},
+			[]allowTestRequest{
+				{
+					resource:      "resource",
+					action:        "action",
+					authToken:     "token",
+					expectAllowed: true,
+					expectErr:     nil,
+					expectQuota: &Quota{
+						limit: &Limited{
+							Resource:    "resource",
+							Action:      "action",
+							Per:         LimitPerToken,
+							MaxRequests: 25,
+							Period:      time.Minute,
+						},
+						used: 1,
+					},
+				},
+			},
+		},
+		{
 			"OneRequestUnlimitedPerAuthToken",
 			10,
 			[]Limit{
