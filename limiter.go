@@ -133,29 +133,36 @@ func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, q
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
+	var policy *limitPolicy
+	policy, err = l.policies.get(resource, action)
+	if err != nil {
+		allowed = false
+		return
+	}
+
+	// The token limit may use the current LimitPerToken key or the deprecated
+	// LimitPerAuthToken key.
+	tokenPer := LimitPerToken
+	if _, terr := policy.limit(LimitPerToken); terr != nil {
+		tokenPer = LimitPerAuthToken
+	}
+
 	allowOrder := []LimitPer{
 		LimitPerTotal,
 		LimitPerIPAddress,
-		LimitPerAuthToken,
+		tokenPer,
 	}
 
 	quotas := make(map[LimitPer]*Quota, len(allowOrder))
 	keys := map[LimitPer]string{
 		LimitPerTotal:     string(LimitPerTotal),
 		LimitPerIPAddress: ip,
-		LimitPerAuthToken: authToken,
+		tokenPer:          authToken,
 	}
 
 	allowed = true
 	for per, id := range keys {
 		var limit Limit
-		var policy *limitPolicy
-		policy, err = l.policies.get(resource, action)
-		if err != nil {
-			allowed = false
-			return
-		}
-
 		limit, err = policy.limit(per)
 		if err != nil {
 			allowed = false
