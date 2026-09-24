@@ -81,7 +81,7 @@ func (p *limitPolicy) buildStr() {
 		}
 
 	}
-	for _, per := range []LimitPer{LimitPerToken, LimitPerAuthToken} {
+	for _, per := range []LimitPer{LimitPerAppToken, LimitPerAuthToken} {
 		l, ok := p.m[per]
 		if !ok {
 			continue
@@ -104,17 +104,17 @@ func (p *limitPolicy) validate() error {
 	case len(p.m) != 3:
 		for _, per := range requiredLimitPer {
 			if _, ok := p.m[per]; !ok {
-				return fmt.Errorf("mising limit for %q: %w", per, ErrInvalidLimitPolicy)
+				return fmt.Errorf("missing limit for %q: %w", per, ErrInvalidLimitPolicy)
 			}
 		}
 	}
-	_, hasToken := p.m[LimitPerToken]
+	_, hasAppToken := p.m[LimitPerAppToken]
 	_, hasAuthToken := p.m[LimitPerAuthToken]
 	switch {
-	case hasToken && hasAuthToken:
-		return fmt.Errorf("limit for %q and deprecated %q are mutually exclusive: %w", LimitPerToken, LimitPerAuthToken, ErrInvalidLimitPolicy)
-	case !hasToken && !hasAuthToken:
-		return fmt.Errorf("mising limit for %q: %w", LimitPerToken, ErrInvalidLimitPolicy)
+	case hasAppToken && hasAuthToken:
+		return fmt.Errorf("limit for %q and %q are mutually exclusive: %w", LimitPerAppToken, LimitPerAuthToken, ErrInvalidLimitPolicy)
+	case !hasAppToken && !hasAuthToken:
+		return fmt.Errorf("missing limit for %q or %q: %w", LimitPerAppToken, LimitPerAuthToken, ErrInvalidLimitPolicy)
 	}
 	return nil
 }
