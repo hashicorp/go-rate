@@ -18,7 +18,7 @@ func (p LimitPer) String() string {
 // IsValid checks if the given LimitPer is valid.
 func (p LimitPer) IsValid() bool {
 	switch p {
-	case LimitPerTotal, LimitPerIPAddress, LimitPerToken, LimitPerAuthToken:
+	case LimitPerTotal, LimitPerIPAddress, LimitPerAppToken, LimitPerAuthToken:
 		return true
 	}
 	return false
@@ -27,19 +27,17 @@ func (p LimitPer) IsValid() bool {
 const (
 	// LimitPerIPAddress indicates that the limit applies per IP address.
 	LimitPerIPAddress LimitPer = "ip-address"
-	// LimitPerToken indicates that the limit applies per token, which includes both app and auth tokens.
-	LimitPerToken LimitPer = "token"
+	// LimitPerAppToken indicates that the limit applies per app token.
+	LimitPerAppToken LimitPer = "app-token"
 	// LimitPerAuthToken indicates that the limit applies per auth token.
-	//
-	// Deprecated: use LimitPerToken instead.
 	LimitPerAuthToken LimitPer = "auth-token"
-	// LimitPerTotal indicates that the limit applies for all IP address and all Auth Tokens.
+	// LimitPerTotal indicates that the limit applies for all IP address and all tokens.
 	LimitPerTotal LimitPer = "total"
 )
 
 // Limit defines the number of requests that can be made to perform an action
 // against a resource in a time period, allocated per IP address, auth token,
-// or in total. A Limit is either Limited or Unlimited.
+// app token, or in total. A Limit is either Limited or Unlimited.
 type Limit interface {
 	// GetResource returns the resource.
 	GetResource() string

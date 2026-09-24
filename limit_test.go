@@ -91,11 +91,11 @@ func TestValidLimit(t *testing.T) {
 			nil,
 		},
 		{
-			"Valid_TokenMaxRequests",
+			"Valid_AppTokenMaxRequests",
 			&Limited{
 				Resource:    "resource",
 				Action:      "action",
-				Per:         LimitPerToken,
+				Per:         LimitPerAppToken,
 				MaxRequests: 10,
 				Period:      time.Minute,
 			},
@@ -129,11 +129,11 @@ func TestValidLimit(t *testing.T) {
 			nil,
 		},
 		{
-			"Valid_TokenUnlimited",
+			"Valid_AppTokenUnlimited",
 			&Unlimited{
 				Resource: "resource",
 				Action:   "action",
-				Per:      LimitPerToken,
+				Per:      LimitPerAppToken,
 			},
 			nil,
 		},
