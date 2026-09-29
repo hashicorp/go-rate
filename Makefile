@@ -17,7 +17,7 @@ golangci-lint:
 
 	if [ "$(GOLINT_INSTALLED)" = "" ]; then \
 		curl -sSfL \
-			https://raw.githubusercontent.com/golangci/golangci-lint/9a8a056e9fe49c0e9ed2287aedce1022c79a115b/install.sh | sh -s -- -b $(GO_PATH)/bin v2.1.6; \
+			https://raw.githubusercontent.com/golangci/golangci-lint/35b2189782a6a059489289257e6523550167cb64/install.sh | sh -s -- -b $(GO_PATH)/bin v2.12.0; \
 	fi;
 
 .PHONY: test
