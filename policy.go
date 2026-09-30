@@ -20,7 +20,7 @@ type limitPolicy struct {
 	policy string
 }
 
-var requiredLimitPer = []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAuthToken}
+var requiredLimitPer = []LimitPer{LimitPerTotal, LimitPerIPAddress}
 
 func newLimitPolicy(resource, action string) *limitPolicy {
 	return &limitPolicy{
@@ -81,6 +81,16 @@ func (p *limitPolicy) buildStr() {
 		}
 
 	}
+	for _, per := range []LimitPer{LimitPerAppToken, LimitPerAuthToken} {
+		l, ok := p.m[per]
+		if !ok {
+			continue
+		}
+		switch ll := l.(type) {
+		case *Limited:
+			s = append(s, fmt.Sprintf("%d;w=%d;comment=%q", ll.MaxRequests, uint64(ll.Period.Seconds()), ll.Per.String()))
+		}
+	}
 
 	p.policy = strings.Join(s, ", ")
 }
@@ -94,9 +104,17 @@ func (p *limitPolicy) validate() error {
 	case len(p.m) != 3:
 		for _, per := range requiredLimitPer {
 			if _, ok := p.m[per]; !ok {
-				return fmt.Errorf("mising limit for %q: %w", per, ErrInvalidLimitPolicy)
+				return fmt.Errorf("missing limit for %q: %w", per, ErrInvalidLimitPolicy)
 			}
 		}
+	}
+	_, hasAppToken := p.m[LimitPerAppToken]
+	_, hasAuthToken := p.m[LimitPerAuthToken]
+	switch {
+	case hasAppToken && hasAuthToken:
+		return fmt.Errorf("limit for %q and %q are mutually exclusive: %w", LimitPerAppToken, LimitPerAuthToken, ErrInvalidLimitPolicy)
+	case !hasAppToken && !hasAuthToken:
+		return fmt.Errorf("missing limit for %q or %q: %w", LimitPerAppToken, LimitPerAuthToken, ErrInvalidLimitPolicy)
 	}
 	return nil
 }

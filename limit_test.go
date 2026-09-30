@@ -32,6 +32,11 @@ func TestValidLimitPer(t *testing.T) {
 			true,
 		},
 		{
+			LimitPerToken.String(),
+			LimitPerToken,
+			true,
+		},
+		{
 			"Invalid",
 			LimitPer("invalid"),
 			false,
@@ -86,6 +91,17 @@ func TestValidLimit(t *testing.T) {
 			nil,
 		},
 		{
+			"Valid_AppTokenMaxRequests",
+			&Limited{
+				Resource:    "resource",
+				Action:      "action",
+				Per:         LimitPerAppToken,
+				MaxRequests: 10,
+				Period:      time.Minute,
+			},
+			nil,
+		},
+		{
 			"Valid_TotalUnlimited",
 			&Unlimited{
 				Resource: "resource",
@@ -109,6 +125,15 @@ func TestValidLimit(t *testing.T) {
 				Resource: "resource",
 				Action:   "action",
 				Per:      LimitPerAuthToken,
+			},
+			nil,
+		},
+		{
+			"Valid_AppTokenUnlimited",
+			&Unlimited{
+				Resource: "resource",
+				Action:   "action",
+				Per:      LimitPerAppToken,
 			},
 			nil,
 		},
