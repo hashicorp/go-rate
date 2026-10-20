@@ -32,8 +32,8 @@ func TestValidLimitPer(t *testing.T) {
 			true,
 		},
 		{
-			LimitPerToken.String(),
-			LimitPerToken,
+			LimitPerAppToken.String(),
+			LimitPerAppToken,
 			true,
 		},
 		{
