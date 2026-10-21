@@ -250,6 +250,24 @@ func TestLimitPolicy_httpHeaderValue(t *testing.T) {
 			`10;w=60;comment="total", 10;w=60;comment="ip-address", 10;w=60;comment="auth-token"`,
 		},
 		{
+			"AppTokenPolicy",
+			func() *limitPolicy {
+				lp := newLimitPolicy("resource", "action")
+				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAppToken} {
+					err := lp.add(&Limited{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         per,
+						MaxRequests: 10,
+						Period:      time.Minute,
+					})
+					require.NoError(t, err)
+				}
+				return lp
+			}(),
+			`10;w=60;comment="total", 10;w=60;comment="ip-address", 10;w=60;comment="app-token"`,
+		},
+		{
 			"UnlimitedTotal",
 			func() *limitPolicy {
 				lp := newLimitPolicy("resource", "action")
@@ -466,6 +484,42 @@ func TestLimitPolicy_validate(t *testing.T) {
 				return lp
 			}(),
 			nil,
+		},
+		{
+			"AppTokenNoError",
+			func() *limitPolicy {
+				lp := newLimitPolicy("resource", "action")
+				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAppToken} {
+					err := lp.add(&Limited{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         per,
+						MaxRequests: 10,
+						Period:      time.Minute,
+					})
+					require.NoError(t, err)
+				}
+				return lp
+			}(),
+			nil,
+		},
+		{
+			"AppTokenAndAuthTokenMutuallyExclusive",
+			func() *limitPolicy {
+				lp := newLimitPolicy("resource", "action")
+				for _, per := range []LimitPer{LimitPerTotal, LimitPerIPAddress, LimitPerAppToken, LimitPerAuthToken} {
+					err := lp.add(&Limited{
+						Resource:    "resource",
+						Action:      "action",
+						Per:         per,
+						MaxRequests: 10,
+						Period:      time.Minute,
+					})
+					require.NoError(t, err)
+				}
+				return lp
+			}(),
+			ErrInvalidLimitPolicy,
 		},
 		{
 			"MissingResource",

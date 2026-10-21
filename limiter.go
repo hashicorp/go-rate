@@ -129,33 +129,40 @@ func (l *Limiter) SetUsageHeader(quota *Quota, header http.Header) {
 //
 // If all of the limits for the given resource and action are Unlimited, the
 // action will be allowed, but the quota returned will be nil.
-func (l *Limiter) Allow(resource, action, ip, authToken string) (allowed bool, quota *Quota, err error) {
+func (l *Limiter) Allow(resource, action, ip, token string) (allowed bool, quota *Quota, err error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
+
+	var policy *limitPolicy
+	policy, err = l.policies.get(resource, action)
+	if err != nil {
+		allowed = false
+		return
+	}
+
+	// The token limit may use the current LimitPerAppToken key or the
+	// LimitPerAuthToken key.
+	tokenPer := LimitPerAppToken
+	if _, terr := policy.limit(LimitPerAppToken); terr != nil {
+		tokenPer = LimitPerAuthToken
+	}
 
 	allowOrder := []LimitPer{
 		LimitPerTotal,
 		LimitPerIPAddress,
-		LimitPerAuthToken,
+		tokenPer,
 	}
 
 	quotas := make(map[LimitPer]*Quota, len(allowOrder))
 	keys := map[LimitPer]string{
 		LimitPerTotal:     string(LimitPerTotal),
 		LimitPerIPAddress: ip,
-		LimitPerAuthToken: authToken,
+		tokenPer:          token,
 	}
 
 	allowed = true
 	for per, id := range keys {
 		var limit Limit
-		var policy *limitPolicy
-		policy, err = l.policies.get(resource, action)
-		if err != nil {
-			allowed = false
-			return
-		}
-
 		limit, err = policy.limit(per)
 		if err != nil {
 			allowed = false
